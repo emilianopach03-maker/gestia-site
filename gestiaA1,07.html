@@ -1,0 +1,2006 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Gestia · Asistente de Trámites (España)</title>
+<style>
+/* Estilos base (minimizados) */
+:root{ --radius:14px; --shadow:0 1px 2px rgba(2,6,23,.04),0 8px 24px rgba(2,6,23,.06); }
+*{box-sizing:border-box}
+body{margin:0;}
+/* ===== CAMBIO 3: Aplicar fuente "Inter" ===== */
+h1,h2,h3,label,select,input,textarea,button,a,p,div,span,ul,li { font-family: 'Inter', sans-serif; }
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.stack{display:flex;flex-direction:column;gap:10px}
+.grid{display:grid;gap:12px}
+@media(min-width:960px){.grid-2{grid-template-columns:1fr 1fr}}
+@media(min-width:1100px){.grid-3{grid-template-columns:1fr 1fr 1fr}}
+.clean{list-style:none;margin:0;padding:0}
+
+/* ===== CAMBIO 1: Estilos para details/summary ===== */
+.details { border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; margin-bottom: 8px; background: rgba(0,0,0,0.1); }
+.summary { padding: 10px 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px; /* Added gap */ }
+.summary:hover { background: rgba(0,0,0,0.05); }
+.detail-body { padding: 0px 14px 10px; border-top: 1px dashed rgba(255,255,255,0.2); font-size: 0.8rem; color: #ffedd5; }
+.detail-body div { margin-bottom: 4px; }
+.detail-body b { color: #fff; }
+.summary label { margin-bottom: 0; display: flex; align-items: center; gap: 8px; flex: 1; }
+/* Ocultar el marcador de <details> */
+details > summary { list-style: none; }
+details > summary::-webkit-details-marker { display: none; }
+/* Indicador de expandir/colapsar */
+.summary::after {
+    content: '+';
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-left: 10px;
+    transition: transform 0.2s ease;
+    flex-shrink: 0; /* Prevent shrinking */
+}
+details[open] .summary::after {
+    content: '−';
+    transform: rotate(180deg);
+}
+/* ===== Fin CAMBIO 1 ===== */
+
+/* ===== INICIO GEMINI: Estilos para el Modal ===== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+.modal-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+}
+.modal-content {
+  background-color: #222; /* Fondo oscuro */
+  color: #eee; /* Texto claro */
+  padding: 30px;
+  border-radius: var(--radius);
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  transform: scale(0.95);
+  transition: transform 0.3s ease;
+}
+.modal-overlay.visible .modal-content {
+  transform: scale(1);
+}
+.modal-content h3 {
+  margin-top: 0;
+  color: var(--orange-400); /* Título naranja */
+  border-bottom-color: #555; /* Línea separadora más clara */
+}
+.modal-content p {
+  line-height: 1.6;
+  font-size: 15px;
+}
+.modal-content pre {
+  background-color: #333;
+  padding: 10px;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 14px;
+}
+.modal-close-btn {
+  margin-top: 20px;
+  padding: 10px 18px;
+}
+.loading-spinner {
+  border: 4px solid #555; /* Gris */
+  border-top: 4px solid var(--orange-500); /* Naranja */
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+/* ===== FIN GEMINI: Estilos para el Modal ===== */
+
+</style>
+<style id="orange-modern-theme">
+/* Paleta Naranja */
+:root{
+  --orange-50:#fff7ed; --orange-100:#ffedd5; --orange-200:#fed7aa; --orange-300:#fdba74;
+  --orange-400:#fb923c; --orange-500:#f97316; --orange-600:#ea580c; --orange-700:#c2410c;
+  --orange-800:#9a3412; --orange-900:#7c2d12;
+  --accent:var(--orange-600);
+  --gradA:linear-gradient(135deg,var(--orange-400),var(--orange-500) 55%,var(--orange-600));
+}
+</style>
+
+<style id="futuristic-theme-v3">
+/* ===== CAMBIO 3: Importar fuente "Inter" ===== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg: #111;
+  /* CAMBIO 3: Color base para paneles naranjas (ya no se usa para section) */
+  --card-bg-orange: rgba(234, 88, 12, 0.08);
+  --line: #444; /* Línea más visible */
+  --fg: #f0f0f0;
+  --muted: #999; /* Gris más claro */
+  --radius: 12px;
+  /* Fondo dinámico inicial */
+  --bg-image: url('bg-madrid-cibeles.jpg');
+  /* CAMBIO 5: Variable para el overlay */
+  --bg-overlay: rgba(17, 17, 17, 0.9);
+
+  /* ===== CAMBIO N: Nuevas variables para el degradado animado ===== */
+  --animated-gradient-color-start: rgba(234, 88, 12, 0.04); /* Naranja muy sutil */
+  --animated-gradient-color-end: rgba(234, 88, 12, 0.0); /* Transparente */
+}
+html {
+  font-size: 16px;
+  scroll-behavior:smooth;
+  cursor: auto;
+}
+body {
+  background: var(--bg);
+  color: var(--fg);
+  /* ===== CAMBIO 3: Aplicar fuente "Inter" ===== */
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  background-image: var(--bg-image);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed; /* Mantiene la imagen fija */
+  position: relative; /* Necesario para el overlay y el degradado */
+
+  /* ===== CAMBIO 5: Transición para el color de fondo ===== */
+  transition: background-color 0.5s ease-in-out;
+}
+/* Overlay oscuro sobre el fondo para mejorar contraste */
+body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: -1;
+    /* ===== CAMBIO 5: Usar variable para el overlay ===== */
+    background: var(--bg-overlay);
+    /* El filtro de la imagen se aplica aquí */
+    backdrop-filter: grayscale(100%) blur(5px);
+    -webkit-backdrop-filter: grayscale(100%) blur(5px);
+    /* ===== CAMBIO 5: Transición para el overlay (AÑADIR backdrop-filter) ===== */
+    transition: background 0.5s ease-in-out, backdrop-filter 0.5s ease-in-out;
+}
+
+/* ===== INICIO CAMBIO 3: Desactivar filtro en scroll-sections ===== */
+body.scroll-section-active::after {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+/* ===== FIN CAMBIO 3 ===== */
+
+/* ===== CAMBIO N: Fondo degradado animado para el efecto de humo ===== */
+body::before {
+    content: '';
+    position: fixed;
+    bottom: 0; left: 0;
+    width: 100%;
+    height: 150px; /* Altura del degradado */
+    z-index: -1;
+    background: linear-gradient(to top, var(--animated-gradient-color-start), var(--animated-gradient-color-end));
+    animation: moveGradient 10s ease-in-out infinite alternate; /* Animación */
+    pointer-events: none;
+}
+
+@keyframes moveGradient {
+  0% { transform: translateY(0) scaleX(1); opacity: 1; }
+  50% { transform: translateY(-10px) scaleX(1.05); opacity: 0.9; }
+  100% { transform: translateY(0) scaleX(1); opacity: 1; }
+}
+
+
+/* Glow/Trace del cursor */
+#cursor-glow {
+  position: fixed; top: 0; left: 0; width: 50px; height: 50px;
+  background: radial-gradient(circle, var(--orange-500) 0%, transparent 60%);
+  border-radius: 999px; opacity: 0.6; pointer-events: none; z-index: 9999;
+  transform: translate(-50%, -50%); transition: transform 0.1s ease-out; /* Más rápido */
+  filter: blur(15px);
+}
+@media (pointer: coarse) { #cursor-glow { display: none; } }
+
+/* Menú Hamburguesa */
+#menu-button {
+  position: fixed; top: 20px; right: 20px; width: 40px; height: 40px;
+  background: rgba(30, 30, 30, 0.8); border: 1px solid var(--line); border-radius: 8px;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  cursor: pointer; z-index: 1001; padding: 8px;
+}
+#menu-button span { display: block; width: 24px; height: 2px; background-color: var(--fg); margin: 2px 0; transition: transform 0.3s ease, opacity 0.3s ease; }
+#menu-button.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+#menu-button.open span:nth-child(2) { opacity: 0; }
+#menu-button.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+#menu-panel {
+  position: fixed; top: 0; right: -300px; width: 280px; height: 100%;
+  background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(15px);
+  border-left: 1px solid var(--line); padding: 80px 30px 30px;
+  transition: right 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 1000;
+  display: flex; flex-direction: column; gap: 20px;
+}
+#menu-panel.open { right: 0; }
+#menu-panel a { color: var(--fg); text-decoration: none; font-size: 18px; font-weight: 500; padding: 10px 0; border-bottom: 1px solid transparent; transition: color 0.2s ease, border-color 0.2s ease; }
+#menu-panel a:hover { color: var(--orange-400); border-bottom-color: var(--orange-600); }
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 12px 120px; }
+
+/* ===== CAMBIO 1: Paneles restaurados a fondo NARANJA y con alto contraste ===== */
+/* Estilos para <section> (wizard y otros) */
+section {
+  border: 0; /* Sin borde */
+  background: var(--gradA); /* Fondo gradiente como el botón */
+  backdrop-filter: none; /* Quitar blur */
+  -webkit-backdrop-filter: none; /* Quitar blur */
+  padding: 24px 32px;
+  border-radius: var(--radius);
+  margin-bottom: 24px;
+  animation: fadeIn 0.6s ease-out forwards;
+  /* Sombra estándar */
+  box-shadow: var(--shadow);
+
+  /* --- Reglas de Contraste --- */
+  /* Textos generales blancos */
+  color: #fff;
+}
+/* Estilos específicos para la sección de email (fondo oscuro) */
+#email-draft-container section {
+    background: #1a1a1a; /* Fondo más oscuro que el body */
+    border: 1px solid var(--line);
+    box-shadow: none; /* Quitar sombra naranja */
+    color: #eee; /* Texto general claro */
+}
+#email-draft-container section h2,
+#email-draft-container section h3,
+#email-draft-container section label {
+    color: #fff; /* Títulos y labels blancos */
+    border-color: var(--line); /* Líneas grises */
+}
+#email-draft-container section select,
+#email-draft-container section textarea {
+    background: #2b2b2b;
+    border-color: #555;
+    color: #eee;
+}
+#email-draft-container section select option {
+    background: #2b2b2b;
+    color: #eee;
+}
+#email-draft-container section button { /* Botón principal */
+    background: var(--gradA);
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(234, 88, 12, 0.15);
+}
+#email-draft-container section button:hover {
+    transform: scale(1.03);
+    filter: brightness(1.1);
+    box-shadow: 0 8px 20px rgba(234, 88, 12, 0.25);
+}
+#email-draft-container section .loading-spinner { /* Spinner oscuro */
+    border: 4px solid #555;
+    border-top: 4px solid var(--orange-500);
+}
+
+
+section h2, section h3, section label, section p {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.4); /* Bordes de h3 más claros */
+}
+section p.muted, section .muted {
+    color: #ffedd5; /* Naranja muy claro para 'muted' */
+    opacity: 0.9;
+}
+
+/* Inputs y selects (oscuros sobre naranja) */
+section input[type=text], section input[type=number], section input[type=date], section textarea {
+    background: rgba(0,0,0,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 16px;
+}
+/* ===== CAMBIO 4: Estilo del selector ===== */
+section select {
+    background-color: black;
+    color: white;
+    border: 1px solid white;
+    /* Asegurar que las opciones también se vean */
+    /* (Esto depende del navegador, pero intentamos mejorar) */
+    -webkit-appearance: none; /* Quitar estilo nativo en WebKit */
+    -moz-appearance: none; /* Quitar estilo nativo en Firefox */
+    appearance: none; /* Quitar estilo nativo estándar */
+    padding: 12px; /* Restablecer padding */
+    padding-right: 30px; /* Espacio para la flecha personalizada */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px 12px;
+    border-radius: 10px; /* Restablecer borde redondeado */
+    font-size: 16px; /* Restablecer tamaño de fuente */
+    width: 100%; /* Asegurar que ocupe todo el ancho */
+}
+/* Estilo para las opciones del selector (limitado soporte) */
+section select option {
+    background-color: black;
+    color: white;
+}
+section select:focus, section input:focus, section textarea:focus {
+    border-color: #fff;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2);
+}
+/* Placeholder text */
+section ::-webkit-input-placeholder { color: #ffedd5; opacity: 0.7; }
+section ::-moz-placeholder { color: #ffedd5; opacity: 0.7; }
+section :-ms-input-placeholder { color: #ffedd5; opacity: 0.7; }
+section ::placeholder { color: #ffedd5; opacity: 0.7; }
+
+/* Contenedores 'result' (oscuros sobre naranja) */
+section .result {
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+/* Checkbox (label blanca, check naranja) */
+section label.cb-label {
+    color: #fff;
+}
+section .cb-label .checkmark {
+    background: rgba(0,0,0,0.15);
+    border-color: rgba(255,255,255,0.3);
+}
+section input[type=checkbox]:checked + .checkmark {
+    background: #fff; /* Checkmark blanco */
+    border-color: #fff;
+}
+section input[type=checkbox]:checked + .checkmark:after {
+    color: var(--orange-600); /* Icono 'tick' naranja */
+    opacity: 1;
+}
+
+
+/* Botones (invertidos: blancos sobre naranja) */
+section button {
+    background: #fff;
+    color: var(--orange-600);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+section button:hover {
+    background: #fff7ed; /* Crema claro */
+    color: var(--orange-700);
+    transform: scale(1.03);
+    filter: brightness(1); /* Reset filter */
+}
+section button:active {
+    transform: scale(0.98);
+    filter: brightness(1);
+}
+/* Botones secundarios (outline blanco) */
+section button.secondary {
+    background: transparent;
+    color: #fff;
+    border: 1px solid #fff;
+    box-shadow: none;
+}
+section button.secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    transform: scale(1.03);
+    filter: brightness(1);
+}
+/* Botones ghost (outline blanco) */
+section button.ghost {
+    background: transparent;
+    color: #ffedd5;
+    border-color: #ffedd5;
+    box-shadow: none;
+}
+section button.ghost:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+/* Botones destructive (blancos con texto rojo) */
+section button.destructive {
+    background: #fff;
+    color: #b91c1c;
+    border: 1px solid #fff;
+    box-shadow: none;
+}
+section button.destructive:hover {
+    background: #fff7ed;
+    color: #b91c1c;
+}
+
+/* Stepper */
+section .stepper {
+    gap: 10px;
+}
+section .step {
+    background: rgba(0,0,0,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #ffedd5;
+}
+section .step:not(.active):hover {
+    background: rgba(0,0,0,0.2);
+    border-color: #fff;
+}
+section .step.active {
+    background: #fff;
+    border-color: #fff;
+    color: var(--orange-600);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+section .step.active b, section .step.active .step-icon {
+    color: var(--orange-600);
+    background: none; /* Quitar gradiente de texto */
+    -webkit-background-clip: unset;
+    background-clip: unset;
+}
+section .step .badge {
+    background: rgba(0,0,0,0.2);
+    border-color: rgba(255,255,255,0.2);
+    color: #fff;
+}
+section .step.active .badge {
+    background: var(--orange-600);
+    border-color: var(--orange-600);
+    color: #fff;
+}
+/* Otros elementos */
+section .note {
+    background: #fff;
+    border-color: #fff;
+    color: var(--orange-700);
+    font-weight: 600;
+}
+section #alertDocs {
+    background: #9a3412; /* Naranja oscuro */
+    border-color: #fff;
+    color: #fff;
+    font-weight: 600;
+}
+section .progress {
+    background: rgba(0,0,0,0.15);
+    border-color: rgba(255,255,255,0.3);
+}
+section .bar {
+    background: #fff; /* Barra de progreso blanca */
+}
+/* --- Fin Reglas de Contraste --- */
+
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ===== CAMBIO 4.1 y 5: Estilos para secciones "Como Funciona" ===== */
+.scroll-section {
+  /* Usar min-height para asegurar que ocupe la pantalla */
+  min-height: 80vh;
+  padding: 80px 32px;
+  margin-bottom: 0; /* Quitar margen para que se peguen */
+  border-radius: 0; /* Quitar bordes para efecto "full-screen" */
+
+  /* Centrar contenido */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+
+  transition: background-color 0.5s ease, color 0.5s ease;
+
+  /* El fondo lo controla el JS, la sección es transparente */
+  background: transparent;
+  color: var(--fg); /* Color de texto por defecto */
+  box-shadow: none; /* Sin sombra */
+}
+
+.scroll-section .how-content {
+  max-width: 600px;
+  animation: fadeIn 0.8s ease-out forwards;
+  opacity: 1; /* Hacer visible, el observer se encarga */
+}
+.scroll-section h2 {
+  font-size: 36px;
+  font-weight: 700;
+  color: inherit; /* Heredar color de la sección */
+  margin-bottom: 20px;
+  border-bottom: 0; /* Sin borde en h2 de scroll */
+}
+.scroll-section p {
+  font-size: 20px;
+  color: inherit; /* Heredar color de la sección */
+  opacity: 0.9;
+  line-height: 1.6;
+}
+/* Clases de color de texto (para que el JS las respete) */
+.scroll-section[data-fg="#FFFFFF"] { color: #FFFFFF; }
+.scroll-section[data-fg="#111111"] { color: #111111; }
+
+
+/* Home Page */
+#home-container { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 90vh; text-align: center; animation: fadeIn 0.6s ease-out forwards; }
+#home-container h2 { font-size: 52px; font-weight: 700; color: #fff; letter-spacing: -1.5px; margin: 0; }
+#home-container p { font-size: 20px; color: var(--muted); margin: 12px 0 32px; max-width: 450px; }
+#home-container .button-group { display: flex; flex-direction: column; gap: 16px; }
+@media (min-width: 600px) { #home-container .button-group { flex-direction: row; } }
+#home-container button { padding: 14px 28px; font-size: 16px; font-weight: 600; }
+
+/* Sección "Mis Trámites" */
+#profile-container { display: none; animation: fadeIn 0.6s ease-out forwards; }
+.tramite-list-item { display: flex; justify-content: space-between; align-items: center; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 12px; background: rgba(30,30,30,0.8); /* Fondo más oscuro que section */ transition: all 0.2s ease; cursor: pointer; }
+.tramite-list-item:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 0 25px rgba(234, 88, 12, 0.1); }
+.tramite-list-item h3 { border: 0; margin: 0; font-size: 18px; color: #fff; }
+.tramite-list-item .badge { font-size: 12px; font-weight: 600; }
+
+/* Sección "About Us" */
+#about-us { padding: 40px 0; text-align: center; }
+#about-us h2 { font-size: 32px; color: #fff; margin-bottom: 16px; border-bottom: 0; }
+#about-us p { font-size: 18px; color: var(--muted); line-height: 1.6; max-width: 700px; margin: 16px auto 0; }
+
+/* Header del Wizard */
+.wizard-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; margin-bottom: 10px; animation: fadeIn 0.6s ease-out forwards; }
+.wizard-header .logo { font-size: 28px; font-weight: 700; color: #fff; }
+.wizard-header button { padding: 8px 14px; font-size: 14px; }
+
+/* Tipografía y formularios (fuera de section)*/
+h1 { font-size: 24px; font-weight: 700; color: #fff; }
+h2 { font-size: 32px; font-weight: 600; letter-spacing: -.5px; color: #fff; margin-bottom: 20px; }
+h2::after { display: none; }
+h3 { color: #ccc; font-weight: 500; font-size: 18px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+label { font-weight: 500; color: #bbb; font-size: 15px; margin-bottom: 6px; }
+select, input[type=text], input[type=number], input[type=date], textarea { background: #2b2b2b; /* Fondo input más claro */ border: 1px solid #555; /* Borde input */ color: #eee; padding: 12px; border-radius: 10px; font-size: 16px; font-family: 'Inter', sans-serif; }
+input[type=file] { background: #2b2b2b; border-color: #555; }
+select:focus, input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in oklab, var(--orange-500) 20%, transparent); outline: none; }
+
+/* Checkbox Futurista (fuera de section) */
+label.cb-label { display: flex; align-items: center; cursor: pointer; font-weight: 500; color: var(--fg); }
+input[type=checkbox].pais, input[type=checkbox].checklist-cb, input[type=checkbox].plan-cb { display: none; } /* Unificado */
+.cb-label .checkmark { width: 20px; height: 20px; border: 2px solid var(--line); background: #2b2b2b; border-radius: 6px; margin-right: 12px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
+.cb-label .checkmark:after { content: '✔'; color: #fff; font-size: 14px; opacity: 0; transform: scale(0.5); transition: all 0.2s ease; }
+input[type=checkbox].pais:checked + .checkmark, input[type=checkbox].checklist-cb:checked + .checkmark, input[type=checkbox].plan-cb:checked + .checkmark { background: var(--accent); border-color: var(--orange-400); }
+input[type=checkbox].pais:checked + .checkmark:after, input[type=checkbox].checklist-cb:checked + .checkmark:after, input[type=checkbox].plan-cb:checked + .checkmark:after { opacity: 1; transform: scale(1); }
+
+/* ===== CAMBIO 3: Botones modernos (fuera de section) ===== */
+button {
+  border: 0;
+  border-radius: 10px;
+  font-weight: 600;
+  letter-spacing: normal;
+  padding: 12px 18px;
+  font-size: 15px;
+  font-family: 'Inter', sans-serif; /* Aplicar fuente */
+  background: var(--gradA);
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(234, 88, 12, 0.15);
+  /* Transición moderna */
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), filter 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+button:hover {
+  transform: scale(1.03); /* Crecer un poco */
+  filter: brightness(1.1); /* Más brillante */
+  box-shadow: 0 8px 20px rgba(234, 88, 12, 0.25); /* Sombra más grande */
+}
+button:active {
+  transform: scale(0.98); /* Efecto "push" */
+  filter: brightness(0.95);
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--orange-400);
+  border: 1px solid var(--orange-600);
+  box-shadow: none;
+  transition: all 0.2s ease; /* Añadir transición */
+}
+button.secondary:hover {
+  background: rgba(234, 88, 12, 0.1);
+  color: var(--orange-300);
+  box-shadow: none;
+  transform: scale(1.03); /* Mismo efecto hover */
+  filter: brightness(1.1);
+}
+button.secondary:active { transform: scale(0.98); } /* Mismo efecto active */
+
+button.ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: #aaa;
+  box-shadow: none;
+  transition: all 0.2s ease; /* Añadir transición */
+}
+button.ghost:hover {
+  background: #2b2b2b;
+  color: #fff; /* Mejorar contraste */
+  transform: scale(1.03); /* Mismo efecto hover */
+}
+button.ghost:active { transform: scale(0.98); } /* Mismo efecto active */
+
+button.destructive {
+  background: rgba(185, 28, 28, 0.2);
+  border: 1px solid #b91c1c;
+  color: #fecaca;
+  box-shadow: none;
+  transition: all 0.2s ease; /* Añadir transición */
+}
+button.destructive:hover {
+  background: #b91c1c;
+  color: #fff;
+  transform: scale(1.03); /* Mismo efecto hover */
+}
+button.destructive:active { transform: scale(0.98); } /* Mismo efecto active */
+
+
+/* Stepper (fuera de section) */
+.stepper { gap: 10px; }
+.step { background: transparent; border: 1px solid var(--line); /* Borde visible */ color: var(--muted); cursor: pointer; transition: all 0.2s ease; padding: 10px 15px; border-radius: 10px; flex: 1; text-align: center; }
+.step:not(.active):hover { background: rgba(255, 255, 255, 0.05); border-color: #666; }
+.step.active { background: rgba(234, 88, 12, 0.1); border-color: var(--accent); box-shadow: none; /* Sin sombra extra */ color: #fff; cursor: default; }
+.step.active b { background: var(--gradA); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.step-icon { font-size: 16px; margin-right: 8px; color: var(--orange-400); /* Icono más claro */ }
+.step.active .step-icon { filter: brightness(1.1); }
+.badge { background: #444; border-color: #666; color: #ccc; font-weight: 500; font-size: 11px; padding: 3px 6px; }
+.step.active .badge { background: var(--orange-800); border-color: var(--orange-600); color: var(--orange-100); }
+
+/* Otros (fuera de section) */
+.result { background: #2b2b2b; border-color: var(--line); border-radius: 10px; padding: 10px 14px; } /* Añadir padding */
+.todo { border-color: #444; background: #222; /* Fondo ToDo más oscuro */ border-radius: 10px; }
+.todo.done { background: rgba(22, 163, 74, 0.1); border-color: #16a34a; }
+.num { background: #444; border-color: #666; color: #fff; width: 28px; height: 28px; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.progress { background: #444; border-color: #555; height: 8px; }
+.bar { background: var(--gradA); }
+.note { background: #4d2407; border-color: var(--orange-800); color: var(--orange-200); font-weight: 500; font-size: 11px; padding: 3px 6px; display: inline-block; border-radius: 4px; }
+.muted { color: #999; }
+#alertDocs { background: var(--orange-900); border-color: var(--orange-700); color: var(--orange-200); padding: 10px 14px; border-radius: 10px; } /* Añadir padding/radius */
+#enlaces { background: transparent; border: 0; box-shadow: none; text-align: center; }
+#enlaces h2 { text-align: center; margin-bottom: 24px; border-bottom: 0; }
+#enlaces .grid { text-align: left; }
+#enlaces .grid h3 { color: var(--orange-300); }
+a { color: var(--orange-400); cursor: pointer; text-decoration: none; }
+a:hover { color: var(--orange-300); }
+a:focus-visible { outline: 3px solid color-mix(in oklab, var(--orange-500) 40%, transparent); }
+hr { border-color: var(--line); margin: 24px 0; }
+.tiny { font-size: 0.8rem; } /* Más pequeño */
+
+/* ===== CAMBIO N: Estilos para el modal de info de documentos (ya no se usa) ===== */
+/* .modal-overlay { ... } */
+
+
+/* ===== CAMBIO 4: Estilos de Impresión ===== */
+@media print {
+  body * {
+    visibility: hidden; /* Ocultar todo */
+    background: #fff !important; /* Fondo blanco */
+    color: #000 !important; /* Texto negro */
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  /* Mostrar solo el contenedor de impresión y su contenido */
+  #print-summary, #print-summary * {
+    visibility: visible;
+    /* ===== INICIO CORRECCIÓN IMPRESIÓN ===== */
+    display: block !important; 
+    /* ===== FIN CORRECCIÓN IMPRESIÓN ===== */
+  }
+  #print-summary {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+  }
+  #print-summary h1 {
+    font-size: 24pt;
+    color: #000;
+    border-bottom: 2px solid #000;
+    padding-bottom: 10px;
+  }
+  #print-summary h2 {
+    font-size: 18pt;
+    color: #333;
+    margin-top: 20px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px;
+  }
+  #print-summary p, #print-summary li {
+    font-size: 12pt;
+    color: #000;
+    line-height: 1.5;
+  }
+  #print-summary ul, #print-summary ol {
+    padding-left: 40px;
+  }
+}
+</style>
+
+</head>
+<body>
+
+<div id="cursor-glow"></div>
+
+<div id="menu-button"><span></span><span></span><span></span></div>
+<div id="menu-panel">
+  <a href="#home" id="menu-home">Inicio</a>
+  <a href="#profile" id="menu-profile">Mis Trámites</a>
+  <!-- ===== INICIO NUEVA SECCIÓN EMAIL: Link en menú ===== -->
+  <a href="#emailDraft" id="menu-email-draft">Redactar Correo</a>
+  <!-- ===== FIN NUEVA SECCIÓN EMAIL: Link en menú ===== -->
+  <a href="#about" id="menu-about">Sobre Gestia</a>
+  <a href="#links" id="menu-links">Enlaces Oficiales</a>
+</div>
+
+<!-- ===== INICIO GEMINI: Modal para mostrar respuestas ===== -->
+<div id="gemini-modal" class="modal-overlay">
+  <div class="modal-content">
+    <h3 id="gemini-modal-title"></h3>
+    <div id="gemini-modal-body">
+      <div class="loading-spinner"></div>
+    </div>
+    <button id="gemini-modal-close" class="modal-close-btn secondary">Cerrar</button>
+  </div>
+</div>
+<!-- ===== FIN GEMINI: Modal para mostrar respuestas ===== -->
+
+<main>
+
+  <div id="home-container">
+    <h2>Bienvenido a Gestia</h2>
+    <p>Tu asistente inteligente para la burocracia en España. Empecemos tu trámite.</p>
+    <div class="button-group">
+      <button id="btnNewProcess">Empezar nuevo trámite</button>
+      <button id="btnContinueProcess" class="secondary" style="display:none;">Continuar trámite anterior</button>
+    </div>
+  </div>
+
+  <div id="profile-container" style="display:none;">
+    <div class="wizard-header"><div class="logo">Mis Trámites</div></div>
+    <section>
+      <p class="muted">Aquí puedes ver todos tus trámites guardados. Haz clic en uno para continuar o empieza uno nuevo.</p>
+      <div id="tramites-list" class="stack" style="margin-bottom: 20px;"></div>
+      <button id="btnStartAnotherNew" class="secondary">Empezar otro trámite nuevo</button>
+    </section>
+  </div>
+
+  <div id="wizard-container" style="display:none;">
+    <div class="wizard-header"><div class="logo">Gestia</div><button id="btnSaveAndExit" class="destructive">Guardar y Salir</button></div>
+    <section aria-label="Progreso"><div class="stepper row"> <!-- Applied .row for responsiveness -->
+      <div class="step active" id="s1" data-step="1"><b><span class="step-icon">👤</span>1) País/Estancia</b><span class="badge" id="b1">...</span></div>
+      <div class="step" id="s2" data-step="2"><b><span class="step-icon">📝</span>2) Trámite</b><span class="badge" id="b2">...</span></div>
+      <div class="step" id="s3" data-step="3"><b><span class="step-icon">📄</span>3) Documentos</b><span class="badge" id="b3">...</span></div>
+      <div class="step" id="s4" data-step="4"><b><span class="step-icon">🗺️</span>4) Recorrido</b><span class="badge" id="b4">...</span></div>
+      <div class="step" id="s5" data-step="5"><b><span class="step-icon">📤</span>5) Envío</b><span class="badge" id="b5">...</span></div>
+    </div></section>
+
+    <section id="paises" style="display:none"><h2>1) Nacionalidades y Estancia</h2><div class="grid grid-2"><div class="stack">
+      <label>Nacionalidades</label><div class="row" style="gap: 16px;">
+        <label class="cb-label"><input type="checkbox" class="pais" value="ES"><span class="checkmark"></span> España</label>
+        <label class="cb-label"><input type="checkbox" class="pais" value="MX"><span class="checkmark"></span> México</label>
+        <label class="cb-label"><input type="checkbox" class="pais" value="VE"><span class="checkmark"></span> Venezuela</label>
+        <label class="cb-label"><input type="checkbox" class="pais" value="CO"><span class="checkmark"></span> Colombia</label>
+        <label class="cb-label"><input type="checkbox" class="pais" value="AR"><span class="checkmark"></span> Argentina</label>
+        <label class="cb-label"><input type="checkbox" class="pais" value="IT"><span class="checkmark"></span> Italia</label>
+        <!-- ===== CAMBIO 5: Añadir opción Otro País UE ===== -->
+        <label class="cb-label"><input type="checkbox" class="pais" value="EU_OTHER"><span class="checkmark"></span> Otro país UE</label>
+      </div>
+      <label>Estancia</label><select id="selEstancia"><option value="">—</option><option value="menos90">&lt;90 días</option><option value="mas90">&gt;90 días</option><option value="residente">&gt;6 meses</option><option value="larga">≥5 años</option></select>
+      <label style="display: none;">Ref. Trámite</label><select id="selRef" style="display: none;"><option value="">— elige nacionalidad —</option></select>
+      <div class="row" style="margin-top:20px"><button id="btnPaisOK">Continuar</button><button class="secondary" id="btnPaisLimpiar">Limpiar</button></div>
+      </div><div><h3>Notas</h3><div id="paisInfo" class="result tiny">Selecciona opciones.</div><div class="row tiny" id="chipsPais" style="margin-top:6px"></div></div></div></section>
+
+    <section id="tramite" style="display:none"><h2>2) Tipo de Trámite</h2><div class="grid grid-2"><div class="stack">
+      <label>Acreditación</label><select id="selTramite"><option value="">—</option><option value="dni">DNI</option><option value="renta">Renta</option><option value="padron">Padrón</option><option value="residencia">Residencia</option><option value="erte">ERTE</option><option value="paro">Paro</option><option value="homolog">Homologación</option><option value="ss">Seg. Social</option></select>
+      <div id="subWrap" style="display:none" class="stack"><label id="lblSub">Sub</label><select id="selSub"></select></div>
+      <div id="extraResidencia" style="display:none" class="stack"><label>Régimen</label><select id="selUE"><option value="auto">Auto</option><option value="si">UE</option><option value="no">No-UE</option></select></div>
+      <div id="extraHomolog" style="display:none" class="stack">
+        <label>Finalidad</label><select id="selFinal"><option value="">—</option><option value="homologar">Homologar</option><option value="acceso">Acceso Uni</option></select>
+        <label>Origen</label><select id="selSistema"><option value="">—</option><option value="latam">LATAM</option><option value="ue">UE</option><option value="ib">IB</option><option value="otro">Otro</option></select>
+        <!-- ===== CAMBIO 1: Desglosar nivel académico ===== -->
+        <label>Nivel</label><select id="selNivel"><option value="">—</option><option value="eso">ESO</option><option value="bachillerato">Bachillerato</option><option value="fp">Formación Profesional</option><option value="grado">Grado Universitario</option><option value="master">Máster</option><option value="doctorado">Doctorado</option><option value="regulada">Profesión Regulada</option></select>
+        <label>Estudio</label><input id="inpGrado" type="text" placeholder="Ej: Ingeniería..."/>
+        <label>Inst. Origen</label><select id="selPubPriv"><option value="">—</option><option value="publica">Pública</option><option value="privada">Privada</option></select>
+        <label>Destino</label><select id="selDestino"><option value="">—</option><option value="uni_publica">Uni Pública</option><option value="uni_privada">Uni Privada</option><option value="colegio_prof">Colegio Prof.</option></select>
+        <label>Docs Español?</label><select id="selIdioma"><option value="si">Sí</option><option value="no">No</option></select>
+      </div>
+      <div class="row" style="margin-top:20px">
+          <button id="btnTramiteOK">Siguiente</button>
+          <button class="secondary" id="btnTramiteLimpiar">Limpiar</button>
+          <!-- ===== INICIO GEMINI: Botón Resumir Trámite ===== -->
+          <button id="btnGeminiSummarizeTramite" class="ghost tiny" style="margin-left: auto;">✨ Resumir Trámite</button>
+          <!-- ===== FIN GEMINI: Botón Resumir Trámite ===== -->
+      </div>
+      </div><div><h3>Resumen</h3><div id="resumeTramite" class="result tiny">Selecciona.</div><hr/><h3>Enlaces</h3><ul id="linksOficiales" class="tiny clean"></ul></div></div></section>
+
+    <section id="documentos" style="display:none"><h2>3) Documentación</h2><p class="muted">Marca si lo tienes y despliega para ver detalles. <span class="note tiny">Bloq.</span> = Bloqueante</p><div id="alertDocs" class="tiny" style="display:none; background: #fff; color: #b91c1c; border: 1px solid #b91c1c; font-weight: bold;" role="alert"></div>
+      <div class="grid grid-2">
+        <!-- Columna Checklist -->
+        <div>
+          <div id="checklistWrap" class="stack">Selecciona acreditación para ver la lista.</div> <!-- Contenedor del checklist (ya no es .result) -->
+          <div class="row" style="margin-top:10px"><button id="btnTodo" class="secondary tiny" disabled>Marcar todo</button><button id="btnNada" class="secondary tiny" disabled>Limpiar</button><button id="btnGuardar" class="tiny" disabled>Guardar</button></div>
+          <div class="progress" style="margin-top:10px"><div id="bar" class="bar"></div></div><div class="row"><span id="badgeProgreso" class="badge">0/0</span></div>
+        </div>
+        <!-- Columna Acciones / Notas -->
+        <div>
+          <h3>Acciones que faltan</h3>
+          <div id="acciones" class="result tiny" style="max-height: 200px; overflow-y: auto;">Marca casillas para ver acciones generadas.</div>
+          <hr/>
+          <h3>Notas CCAA</h3>
+          <div id="notasCA" class="result tiny"></div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:20px"><button id="btnGenerarPlan">Generar Recorrido</button></div>
+    </section>
+
+    <section id="plan" style="display:none"><h2>4) Recorrido Guiado</h2><p class="muted">Sigue el orden.</p><div id="pasos" class="stack" style="max-height: 500px; overflow-y: auto;"></div>
+        <div class="row" style="margin-top:12px">
+            <button id="btnMarcarTodos" class="secondary">Marcar Todos</button>
+            <button id="btnReiniciarPlan" class="secondary">Reiniciar Plan</button>
+        </div>
+        <!-- ===== INICIO CAMBIO 2: Añadir botón para ir al paso 5 ===== -->
+        <div class="row" style="margin-top:20px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px;"> <!-- Lighter border -->
+            <button id="btnGoToEnvio">Continuar a Envío</button>
+        </div>
+        <!-- ===== FIN CAMBIO 2 ===== -->
+    </section>
+
+    <!-- ===== INICIO CAMBIO 2: Sección #envio simplificada ===== -->
+    <section id="envio" style="display:none">
+        <h2>5) Envío y seguimiento</h2>
+        <p class="muted">Usa estas herramientas para finalizar tu gestión.</p>
+        <div class="grid grid-2">
+            <div>
+                <h3>Recordatorio</h3>
+                <p class="tiny muted" style="margin-top: 4px; margin-bottom: 12px;">Activa un recordatorio para revisar el estado de tu trámite más adelante.</p>
+                <div class="row">
+                    <label class="tiny">Recordatorio<input id="mins" type="number" min="1" max="240" value="30" style="width:60px"/></label>
+                    <button id="btnRecordatorio" class="tiny">Activar</button>
+                    <button id="btnCancelar" class="secondary tiny">Cancelar</button>
+                </div>
+                <div id="alerta" class="result tiny" style="display:none;margin-top:8px" role="status">⏰ Revisa exp.</div>
+            </div>
+            <div>
+                <h3>Resumen para Imprimir</h3>
+                <p class="tiny muted" style="margin-top: 4px; margin-bottom: 12px;">Genera una hoja de ruta con todos tus documentos y pasos para tenerla a mano.</p>
+                <button id="btnImprimir" class="secondary">Imprimir Resumen</button>
+            </div>
+        </div>
+
+        <!-- Elementos ocultos del diseño original -->
+        <div style="display:none;">
+            <h3>Estado</h3>
+            <div class="row" style="margin-bottom:6px">
+                <button class="ghost tiny" data-st="enviado">Enviado</button>
+                <button class="ghost tiny" data-st="en_estudio">Estudio</button>
+                <button class="ghost tiny" data-st="requerimiento">Requerido</button>
+                <button class="ghost tiny" data-st="resuelto">Resuelto</button>
+                <span id="estado" class="badge">Estado: —</span>
+            </div>
+            <h3>Identificadores</h3>
+            <div class="stack">
+                <input id="txtIdExp" type="text" placeholder="CSV, Valida-TE ID, Ref. Tasa..."/>
+                <button id="btnGuardarExp" class="secondary tiny">Guardar ID</button>
+                <div id="savedExp" class="tiny muted"></div>
+            </div>
+            <button id="btnCerrar" class="secondary disabled" disabled>Generar Comprobante</button>
+            <div id="comprobante" class="tiny muted" style="margin-top:6px"></div>
+        </div>
+    </section>
+    <!-- ===== FIN CAMBIO 2 ===== -->
+  </div>
+
+  <!-- ===== INICIO NUEVA SECCIÓN EMAIL: Contenedor HTML ===== -->
+  <div id="email-draft-container" style="display:none;">
+    <div class="wizard-header"><div class="logo">Redactar Correo</div></div>
+    <section>
+        <h2>Asistente de Redacción</h2>
+        <p class="muted">Selecciona un trámite y el propósito para generar un borrador de correo electrónico con IA.</p>
+        <div class="grid grid-2">
+            <div class="stack">
+                <label for="selEmailTramite">Trámite Guardado</label>
+                <select id="selEmailTramite">
+                    <option value="">— Selecciona un trámite —</option>
+                    <!-- Opciones se llenarán con JS -->
+                </select>
+
+                <label for="selEmailPurpose">Propósito del Correo</label>
+                <select id="selEmailPurpose">
+                    <option value="consultar_estado">Consultar estado</option>
+                    <option value="aportar_documentacion">Aportar documentación</option>
+                    <option value="solicitar_informacion">Solicitar información adicional</option>
+                    <option value="otro">Otro (especificar abajo)</option>
+                </select>
+
+                <label for="txtEmailDetails">Detalles Adicionales (Opcional)</label>
+                <textarea id="txtEmailDetails" rows="3" placeholder="Ej: Número de expediente, documentos adjuntos, pregunta específica..."></textarea>
+
+                <button id="btnGenerateEmailDraft" style="margin-top: 15px;">✨ Generar Borrador con IA</button>
+            </div>
+            <div class="stack">
+                <label for="txtEmailDraftResult">Borrador Generado</label>
+                <textarea id="txtEmailDraftResult" rows="15" placeholder="Aquí aparecerá el borrador del correo..."></textarea>
+                 <div id="email-loading" style="display: none; text-align: center; margin-top: 10px;">
+                    <div class="loading-spinner" style="margin: 5px auto;"></div>
+                    <span class="tiny muted">Generando correo...</span>
+                </div>
+            </div>
+        </div>
+    </section>
+  </div>
+  <!-- ===== FIN NUEVA SECCIÓN EMAIL: Contenedor HTML ===== -->
+
+  <section id="about-us" style="background: transparent; border: 0; box-shadow: none;">
+    <h2>Simplifica tu Papeleo, Recupera tu Tiempo</h2>
+    <p>¿Cansado del laberinto burocrático? Gestia es tu guía inteligente en España. Te ayudamos a completar trámites de forma clara y sencilla, ahorrándote estrés y horas perdidas. Únete a nuestra comunidad y navega la administración con confianza.</p>
+  </section>
+
+  <section id="how-it-works-1" class="scroll-section" data-bg="var(--orange-600)" data-fg="#FFFFFF">
+    <div class="how-content">
+      <h2>¿Cómo Funciona?</h2>
+      <p><strong>1. Define tu Trámite:</strong> Responde unas pocas preguntas clave. Nuestra IA filtra el ruido y se centra solo en lo que necesitas para tu caso específico.</p>
+    </div>
+  </section>
+
+  <!-- ===== INICIO CAMBIO 1: Fondo blanco y texto negro ===== -->
+  <section id="how-it-works-2" class="scroll-section" data-bg="#FFFFFF" data-fg="#111111">
+    <div class="how-content">
+      <h2>Documentos Claros</h2>
+      <p><strong>2. Tu Checklist Personalizado:</strong> Generamos una lista de tareas clara y precisa. Sabrás exactamente qué documentos necesitas y cuáles son prioritarios, sin extras innecesarios.</p>
+    </div>
+  </section>
+  <!-- ===== FIN CAMBIO 1 ===== -->
+
+  <section id="how-it-works-3" class="scroll-section" data-bg="#111111" data-fg="#FFFFFF">
+    <div class="how-content">
+      <h2>Tu Hoja de Ruta</h2>
+      <p><strong>3. Tu Hoja de Ruta:</strong> Te entregamos un plan de acción guiado de principio a fin. Sigue los pasos en orden y navega el proceso con total confianza.</p>
+    </div>
+  </section>
+
+  <!-- ===== CAMBIO 2: Añadir sección Disclaimer ===== -->
+  <section id="disclaimer" class="scroll-section" data-bg="#222222" data-fg="#CCCCCC">
+      <div class="how-content">
+        <h2>Versión Alfa</h2>
+        <p>Actualmente estás usando una versión temprana de Gestia. Estamos trabajando para añadir más trámites y nacionalidades pronto. ¡Gracias por tu paciencia!</p>
+      </div>
+  </section>
+  <!-- ===== FIN CAMBIO 2 ===== -->
+
+  <section id="enlaces"><h2>Enlaces oficiales</h2><div class="grid grid-3 tiny"><div><h3>Identidad</h3><ul class="clean"><li><a href="https://clave.gob.es/">Cl@ve</a></li><li><a href="https://www.sede.fnmt.gob.es/certificados">FNMT</a></li><li><a href="https://sede.administracion.gob.es/carpeta/clave.htm">Carpeta Ciudadana</a></li><li><a href="https://dehu.redsara.es/">DEHú</a></li><li><a href="https://sede.administracion.gob.es/csv.html">CSV</a></li></ul></div><div><h3>Educación</h3><ul class="clean"><li><a href="https://www.ciencia.gob.es/Universidades/validate.html">Valida-TE</a></li><li><a href="https://universidades.sede.gob.es/pagina/index/directorio/Tasa_107">Tasa 790-107</a></li><li><a href="https://www.educacionyfp.gob.es/servicios-al-ciudadano/catalogo/estudiantes/homologacion-convalidacion.html">MEFP</a></li><li><a href="https://www.aneca.es/">ANECA</a>·<a href="https://www.educacion.gob.es/ruct/home">RUCT</a></li><li><a href="https://www.exteriores.gob.es/es/ServiciosAlCiudadano/Paginas/Traductores-Interpretes-Jurados.aspx">Traductores</a></li></ul></div><div><h3>Otros</h3><ul class="clean"><li><a href="https://www.citapreviadnie.es/">Cita DNI</a></li><li><a href="https://sede.sepe.gob.es/">SEPE</a>·<a href="https://importass.seg-social.es/">Import@ss</a></li><li><a href="https://sede.agenciatributaria.gob.es/Sede/Renta.html">Renta WEB</a></li><li><a href="https://administracion.gob.es/pag_Home/atencionCiudadana/encuentraTuOficina/Locales.html">Ayuntamientos</a></li><li><a href="https://extranjeros.inclusion.gob.es/es/ModelosSolicitudes/">Extranjería</a></li></ul></div></div></section>
+
+</main>
+
+<!-- Contenedor para el resumen de impresión (ya no se usa aquí, se usa en Paso 5) -->
+<div id="print-summary" style="display:none;"></div>
+
+<script>
+// ===== INICIO CORRECCIÓN NAVEGADOR: Envolver todo en DOMContentLoaded =====
+document.addEventListener('DOMContentLoaded', () => {
+
+/* =================== 0) Datos base =================== */
+const EU = new Set(["ES","IT", "EU_OTHER"]); // ===== CAMBIO 5: Añadir EU_OTHER a Set UE =====
+const COUNTRIES = {
+    ES:{nombre:"España", ue:true, apostilla:false},
+    MX:{nombre:"México", ue:false, apostilla:true},
+    VE:{nombre:"Venezuela", ue:false, apostilla:true},
+    CO:{nombre:"Colombia", ue:false, apostilla:true},
+    AR:{nombre:"Argentina", ue:false, apostilla:true},
+    IT:{nombre:"Italia", ue:true, apostilla:true},
+    EU_OTHER:{nombre:"Otro país UE", ue:true, apostilla:true} // ===== CAMBIO 5: Añadir Otro País UE =====
+};
+const LINKS = { clave:{t:"Cl@ve",u:"https://clave.gob.es/"}, fnmt:{t:"FNMT",u:"https://www.sede.fnmt.gob.es/certificados"}, carpeta:{t:"Carpeta Ciudadana",u:"https://sede.administracion.gob.es/carpeta/clave.htm"}, dehu:{t:"DEHú",u:"https://dehu.redsara.es/"}, csv:{t:"CSV",u:"https://sede.administracion.gob.es/csv.html"}, dniecita:{t:"Cita DNI",u:"https://www.citapreviadnie.es/"}, renta:{t:"Renta WEB",u:"https://sede.agenciatributaria.gob.es/Sede/Renta.html"}, aeat:{t:"AEAT",u:"https://sede.agenciatributaria.gob.es/"}, aytos:{t:"Ayuntamientos",u:"https://administracion.gob.es/pag_Home/atencionCiudadana/encuentraTuOficina/Locales.html"}, modelosEX:{t:"Modelos Extranjería",u:"https://extranjeros.inclusion.gob.es/es/ModelosSolicitudes/"}, citaEX:{t:"Cita Extranjería",u:"https://sede.administracionespublicas.gob.es/icpplus/"}, tasa012:{t:"Tasa 790-012",u:"https://sede.policia.gob.es/portalCiudadano/"}, sepe:{t:"SEPE",u:"https://sede.sepe.gob.es/"}, importass:{t:"Import@ss",u:"https://importass.seg-social.es/"}, validaTE:{t:"Valida-TE",u:"https://www.ciencia.gob.es/Universidades/validate.html"}, tasa107:{t:"Tasa 790-107",u:"https://universidades.sede.gob.es/pagina/index/directorio/Tasa_107"}, mefp:{t:"MEFP",u:"https://www.educacionyfp.gob.es/servicios-al-ciudadano/catalogo/estudiantes/homologacion-convalidacion.html"}, aneca:{t:"ANECA",u:"https://www.aneca.es/"}, ruct:{t:"RUCT",u:"https://www.educacion.gob.es/ruct/home"}, maec:{t:"Traductores",u:"https://www.exteriores.gob.es/es/ServiciosAlCiudadano/Paginas/Traductores-Interpretes-Jurados.aspx"} };
+const DOCS = { foto_carnet:{title:"Foto carné",block:false}, cert_nacimiento_dni:{title:"Cert. Nacimiento (1ª DNI)",block:true}, padron_volante:{title:"Volante Padrón",block:true, link:"aytos"}, dni_anterior:{title:"DNI anterior/Denuncia",block:true}, tasa_dni:{title:"Tasa DNI (12€)",block:true, link:"dniecita"}, identificacion_elec:{title:"Ident. Electrónica",block:true, link:"clave"}, iban:{title:"IBAN",block:false}, cert_ingresos:{title:"Cert. Ingresos",block:false}, hoja_padron:{title:"Hoja Padronal",block:true, link:"aytos"}, id_doc:{title:"ID (Pasap/NIE/TIE)",block:true}, just_dom:{title:"Justif. Domicilio",block:true}, autorizacion_titular:{title:"Autoriz. Titular",block:false}, pasaporte_id:{title:"Pasap/ID Vigente",block:true}, ex18:{title:"EX-18 (Reg. UE)",block:true, link:"modelosEX"}, art7:{title:"Acred. Art. 7",block:true}, ex17:{title:"EX-17 (TIE)",block:true, link:"modelosEX"}, tasa_012:{title:"Tasa 790-012",block:true, link:"tasa012"}, visa_resol:{title:"Visado/Resolución",block:true}, demandante:{title:"Alta Demandante",block:true, link:"sepe"}, cert_empresa:{title:"Cert. Empresa",block:true, link:"sepe"}, nuss:{title:"NUSS/NAF (SS)",block:true, link:"importass"}, apostilla:{title:"Apostilla",block:true, link:"maec"}, traduccion:{title:"Traducción Jurada",block:true, link:"maec"}, tasa_107:{title:"Tasa 790-107",block:true, link:"tasa107"}, validaTE:{title:"Exp. Valida-TE",block:true, link:"validaTE"}, mefp_sol:{title:"Solic. MEFP",block:true, link:"mefp"}, ruct_check:{title:"Check RUCT/ANECA",block:false, link:"ruct"}, unedasiss:{title:"Acred. UNEDasiss",block:true} };
+/* ===== CAMBIO 1: Información detallada de documentos (restaurada desde v6) ===== */
+const EXPLAIN = {
+  foto_carnet:{q:"Foto reciente en color, fondo blanco.",w:"Estudio/fotomatón.",h:"Normativa DNI.",p:"Inmediato.",c:"~5-10€"},
+  cert_nacimiento_dni:{q:"Partida literal (<6m) para DNI.",w:"Registro Civil.",h:"Solicitar 'para DNI'.",p:"Días.",c:"0€"},
+  padron_volante:{q:"Acredita domicilio.",w:"Ayuntamiento.",h:"Cita+ID+Justif.",p:"Horas.",c:"0€"},
+  dni_anterior:{q:"Caducado o denuncia.",w:"Comisaría (denuncia).",h:"Si robo, denunciar.",p:"N/A.",c:"12€ (duplicado)"},
+  tasa_dni:{q:"Pago DNI.",w:"Oficina DNI (caja).",h:"Pagar cita (efectivo).",p:"Hoy.",c:"12€"},
+  identificacion_elec:{q:"Cl@ve/FNMT.",w:"Online/Oficina registro.",h:"Registrar+Activar.",p:"Horas/Días.",c:"0€"},
+  iban:{q:"Cuenta bancaria.",w:"Tu banco.",h:"Tener IBAN.",p:"N/A.",c:"Varía"},
+  cert_ingresos:{q:"Retenciones/ingresos.",w:"Empleador/AEAT.",h:"Descargar.",p:"Hoy.",c:"0€"},
+  hoja_padron:{q:"Formulario alta padrón.",w:"Ayuntamiento.",h:"Rellenar+Justifs.",p:"Hoy.",c:"0€"},
+  id_doc:{q:"ID personal (DNI/NIE/Pasaporte).",w:"—",h:"Vigente.",p:"—",c:"—"},
+  just_dom:{q:"Prueba uso vivienda.",w:"Arrendador/Recibo/Escritura.",h:"Contrato, factura, etc.",p:"Hoy.",c:"—"},
+  autorizacion_titular:{q:"Permiso del titular.",w:"Titular vivienda.",h:"Firma+copia DNI titular.",p:"Hoy.",c:"0€"},
+  pasaporte_id:{q:"ID viaje (Pasaporte/ID UE).",w:"—",h:"Vigente.",p:"—",c:"—"},
+  ex18:{q:"Form. EX-18 (Registro UE >90d).",w:"Extranjería/Policía.",h:"Rellenar + 790-012 + Art.7.",p:"<3m.",c:"~16€ (tasa)"},
+  art7:{q:"Acreditar medios/empleo + seguro (Art.7 RD 240/07).",w:"Empleador/Banco/Aseguradora.",h:"Aportar docs. según caso.",p:"Con EX-18.",c:"Varía"},
+  ex17:{q:"Form. EX-17 (Solicitud TIE).",w:"Policía (cita huellas).",h:"Rellenar + Res+Foto+790-012.",p:"<1m.",c:"~16€ (tasa)"},
+  tasa_012:{q:"Tasa Extranjería (mod. 790 cod. 012).",w:"Banco/Online (Sede Policía).",h:"Generar+Pagar.",p:"Antes cita.",c:"~12-22€"},
+  visa_resol:{q:"Visado entrada o Resolución favorable.",w:"Consulado/Extranjería.",h:"Aportar como prueba.",p:"Previo.",c:"Varía"},
+  demandante:{q:"Alta demandante empleo.",w:"Servicio Empleo Autonómico.",h:"Inscribirse (online/presencial).",p:"Hoy.",c:"0€"},
+  cert_empresa:{q:"Certificado empresa (paro).",w:"Empresa (envío a SEPE).",h:"Verificar envío.",p:"Días.",c:"0€"},
+  nuss:{q:"Nº Seguridad Social (NUSS/NAF).",w:"Tesorería SS (Import@ss).",h:"Solicitar (TA.1 / online).",p:"Hoy/Días.",c:"0€"},
+  apostilla:{q:"Apostilla de La Haya / Legalización.",w:"País Origen (Min. Exteriores).",h:"Apostilla o vía consular.",p:"Semanas.",c:"Varía"},
+  traduccion:{q:"Traducción jurada.",w:"Traductor Jurado (MAEC).",h:"Contratar.",p:"Días.",c:"Por pág."},
+  tasa_107:{q:"Tasa Homolog. Universitaria (mod. 790 cod. 107).",w:"Banco/Online (Sede Universidades).",h:"Generar+Pagar.",p:"Antes solic.",c:"~167€"},
+  validaTE:{q:"Expediente Homolog. Uni. (Valida-TE).",w:"Ministerio Universidades.",h:"Crear exp.+Subir PDFs+Tasa.",p:"Meses.",c:"0€ (plataforma)"},
+  mefp_sol:{q:"Solicitud Homolog. No Univ. (MEFP).",w:"MEFP/CAA.",h:"Formulario+Docs apost/trad.",p:"Meses.",c:"0€ (ESO)/~50€ (Bach.)"},
+  ruct_check:{q:"Comprobar oficialidad título (RUCT/ANECA).",w:"RUCT/ANECA web.",h:"Buscar.",p:"Hoy.",c:"0€"},
+  unedasiss:{q:"Acreditación Acceso Uni Extranjeros (UNEDasiss).",w:"UNEDasiss.",h:"Solicitar online + PCE (si aplica).",p:"Meses.",c:"Tasas UNED"}
+};
+/* ===== FIN CAMBIO 1 ===== */
+
+/* =================== 1) Estado y helpers =================== */
+const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+const store={get(k,d=null){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set(k,v){localStorage.setItem(k,JSON.stringify(v))},del(k){localStorage.removeItem(k)}};
+
+// Arquitectura Multi-Trámite
+const STORAGE_KEY = "gestia_all_tramites";
+let allTragmites = [];
+let currentTragmitesIndex = -1;
+
+const newStateTemplate = { id: null, paises:[], estancia:"", ref:"", tramite:null, sub:null, final:null, sistema:null, nivel:null, gradoText:"", pubpriv:null, destino:null, idioma:"si", ueMode:"auto", checklist:[], plan:[], adjuntos:{}, expedienteId:"", estado:null, currentStep: 1 };
+let state = {...newStateTemplate};
+
+const EUof = code => !!COUNTRIES[code]?.ue; // Utiliza la constante COUNTRIES actualizada
+const flow=()=>({ paises:[...state.paises], ref: state.ref || state.paises[0] || null, isEU: state.ueMode==="si" ? true : state.ueMode==="no" ? false : EUof(state.ref||""), estancia: state.estancia, sub:state.sub, final:state.final, sistema:state.sistema, nivel:state.nivel, gradoText:state.gradoText, pubpriv:state.pubpriv, destino:state.destino, idioma:state.idioma });
+
+
+/* =================== NAVEGACIÓN Y VISIBILIDAD =================== */
+
+function showView(viewName) {
+  // Asegurarse de que todos los contenedores existen antes de intentar acceder a su 'style'
+  const homeContainer = $("#home-container");
+  const profileContainer = $("#profile-container");
+  const wizardContainer = $("#wizard-container");
+  const emailDraftContainer = $("#email-draft-container"); // Añadido
+  const aboutUsSection = $("#about-us");
+  const enlacesSection = $("#enlaces");
+  const disclaimerSection = $("#disclaimer");
+
+  if (homeContainer) homeContainer.style.display = (viewName === 'home') ? 'flex' : 'none';
+  if (profileContainer) profileContainer.style.display = (viewName === 'profile') ? 'block' : 'none';
+  if (wizardContainer) wizardContainer.style.display = (viewName === 'wizard') ? 'block' : 'none';
+  if (emailDraftContainer) emailDraftContainer.style.display = (viewName === 'emailDraft') ? 'block' : 'none'; // Añadido
+
+  // Mostrar/Ocultar secciones fijas según la vista
+  if (aboutUsSection) aboutUsSection.style.display = (viewName === 'home') ? 'block' : 'none';
+  if (enlacesSection) enlacesSection.style.display = (viewName === 'home') ? 'block' : 'none';
+  if (disclaimerSection) disclaimerSection.style.display = (viewName === 'home') ? 'flex' : 'none'; // Mostrar disclaimer en home
+
+  // Mostrar/Ocultar secciones "Cómo Funciona"
+  $$('.scroll-section').forEach(el => {
+      // Excluir disclaimer de esta lógica
+      if(el.id !== 'disclaimer') {
+          el.style.display = (viewName === 'home') ? 'flex' : 'none';
+      }
+  });
+
+
+  if (viewName !== 'wizard') currentTragmitesIndex = -1;
+  window.scrollTo(0, 0);
+
+  // ===== INICIO NUEVA SECCIÓN EMAIL: Populate selector =====
+  if (viewName === 'emailDraft') {
+      populateTramiteEmailSelector();
+  }
+  // ===== FIN NUEVA SECCIÓN EMAIL =====
+}
+
+
+function goToStep(stepNum) {
+  if (!state || currentTragmitesIndex === -1) return; // No hacer nada si no hay trámite activo
+  state.currentStep = stepNum;
+  $$("#paises, #tramite, #documentos, #plan, #envio").forEach(el => el.style.display = "none");
+  if (stepNum === 1) $("#paises").style.display = "block";
+  else if (stepNum === 2) $("#tramite").style.display = "block";
+  else if (stepNum === 3) $("#documentos").style.display = "block";
+  else if (stepNum === 4) { $("#plan").style.display = "block"; }
+  else if (stepNum === 5) { $("#envio").style.display = "block"; } // ===== CAMBIO 2: Asegurar que se muestra el paso 5 =====
+
+  step(stepNum);
+  updateBadges();
+  window.scrollTo(0, 0);
+  save(false); // Guardar el paso actual al navegar
+}
+
+function step(n){
+  $$(".step").forEach((el,i)=>{
+    const isActive = i === n - 1;
+    el.classList.toggle("active", isActive);
+    el.setAttribute("aria-selected", isActive ? "true" : "false");
+    el.setAttribute("tabindex", isActive ? "0" : "-1");
+
+    // ===== INICIO CAMBIO 2: Lógica de navegación del stepper =====
+    // Permitir clic si el paso está definido (o es el paso 1)
+    const canNavigate = (i === 0) || isStepDefined(i + 1);
+    el.style.cursor = canNavigate ? 'pointer' : (isActive ? 'default' : 'not-allowed');
+    el.style.opacity = canNavigate || isActive ? '1' : '0.6'; // Atenuar pasos futuros
+    // ===== FIN CAMBIO 2 =====
+  });
+}
+
+// ===== INICIO CAMBIO 2: Lógica de navegación isStepDefined =====
+// Verifica si un paso tiene la información mínima para ser considerado "definido"
+function isStepDefined(stepNum) {
+    if (!state) return false;
+
+    // Las definiciones son acumulativas
+    const s1 = state.paises.length > 0 && !!state.estancia && !!state.ref;
+    if (stepNum === 1) return s1;
+
+    const s2 = s1 && !!state.tramite;
+    if (stepNum === 2) return s2;
+
+    const s3 = s2 && state.checklist.length > 0;
+    if (stepNum === 3) return s3;
+
+    const s4 = s3 && state.plan.length > 0;
+    if (stepNum === 4) return s4;
+
+    // El paso 5 es accesible en cuanto el paso 4 está definido (es decir, el plan existe)
+    const s5 = s4;
+    if (stepNum === 5) return s5;
+
+    return false; // Por defecto
+}
+// ===== FIN CAMBIO 2 =====
+
+
+function updateBadges() {
+    if (!state) return; // No hacer nada si state no está definido
+    badge(1, state.paises.length && state.estancia && state.ref ? "OK" : "...");
+    badge(2, state.tramite ? "OK" : "...");
+    const checklistComplete = state.checklist.length > 0 && state.checklist.every(c => c.ok || !c.block);
+    badge(3, state.checklist.length ? (checklistComplete ? "OK" : "...") : "...");
+    const planComplete = state.plan.length > 0 && state.plan.every(p => p.done);
+    badge(4, state.plan.length ? (planComplete ? "OK" : "...") : "...");
+    // ===== CAMBIO 2: Badge paso 5 restaurado =====
+    badge(5, isStepDefined(5) ? (state.expedienteId ? "OK" : "Listo") : "...");
+}
+const badge=(i,t)=>{ const b = $("#b"+i); if(b) b.textContent=t; };
+
+
+/* =================== Paso 1 — País + Estancia =================== */
+function updateRefOptions(){
+    const sel=$("#selRef");
+    sel.innerHTML = `<option value="">— selecciona —</option>` + state.paises.map(c=>`<option value="${c}">${COUNTRIES[c].nombre}</option>`).join("");
+    // Restaurar selección si existe en state
+    if(state.ref) sel.value = state.ref;
+}
+$("#btnPaisOK").onclick=()=>{
+    // Re-leer valores directamente de los inputs en el momento del click
+    const chosen = $$(".pais:checked").map(x => x.value);
+    const est = $("#selEstancia").value;
+    const ref = $("#selRef").value;
+
+    // Validar
+    if (chosen.length === 0) { console.warn("Selecciona al menos una nacionalidad."); return; } // No usar alert
+    if (!est) { console.warn("Indica tu tiempo de estancia."); return; }
+    if (!ref && chosen.length > 1) { console.warn("Elige una nacionalidad de referencia si seleccionas varias."); return; } // Solo si hay más de una
+    const finalRef = ref || chosen[0]; // Si solo hay una, usar esa como referencia
+
+    // Actualizar estado
+    Object.assign(state, { paises: chosen, estancia: est, ref: finalRef, currentStep: 2 });
+
+    // Actualizar UI (info y chips)
+    const blocks=chosen.map(c=>{ const p=COUNTRIES[c]; const apost=p.apostilla?" · Apostilla":""; return `<div class="tiny">• <b>${p.nombre}</b> (${p.ue?"UE":"No-UE"})${apost}</div>`; }).join("");
+    $("#paisInfo").innerHTML=blocks+`<div class="tiny muted" style="margin-top:6px">Est: <b>${labelEstancia(state.estancia)}</b>. Rég: <b>${flow().isEU?"UE":"General"}</b></div>`;
+    $("#chipsPais").innerHTML=chosen.map(c=>`<span class="badge">${COUNTRIES[c].nombre}</span>`).join("");
+
+    badge(1,"OK");
+    goToStep(2);
+    save();
+};
+$("#btnPaisLimpiar").onclick=()=>{
+    $$(".pais").forEach(p=>p.checked=false);
+    $("#selEstancia").value=""; $("#selRef").innerHTML=`<option value="">—</option>`;
+    Object.assign(state,{paises:[],estancia:"",ref:""});
+    $("#paisInfo").textContent="Selecciona opciones."; $("#chipsPais").innerHTML="";
+    badge(1,"..."); updateBadges(); step(1); save();
+};
+$$(".pais").forEach(el=> el.addEventListener("change",()=>{
+    state.paises=$$(".pais:checked").map(x=>x.value);
+    const refSelectContainer = $("#selRef").previousElementSibling; // Seleccionar el label
+    if (state.paises.length > 1) { // Mostrar selector de ref solo si hay > 1 país
+        updateRefOptions();
+        if(refSelectContainer) refSelectContainer.style.display = 'block'; // Mostrar label
+        $("#selRef").style.display = 'block'; // Mostrar select
+    } else {
+        if(refSelectContainer) refSelectContainer.style.display = 'none'; // Ocultar label
+        $("#selRef").style.display = 'none'; // Ocultar select
+        state.ref = state.paises[0] || ""; // Establecer ref automáticamente si solo hay 1
+    }
+    save();
+}));
+$("#selEstancia").onchange=e=>{state.estancia=e.target.value; save();}
+$("#selRef").onchange=e=>{state.ref=e.target.value; save();}
+function labelEstancia(v){return v==="menos90"?"<90d":v==="mas90"?">90d":v==="residente"?">6m":"≥5a";}
+
+
+/* =================== Paso 2 — Trámite =================== */
+$("#selTramite").addEventListener("change",e=>{ const v=e.target.value; state.tramite=v; state.sub=null; $("#subWrap").style.display=(v==="dni"||v==="erte")?'block':'none'; $("#extraResidencia").style.display=(v==="residencia")?'block':'none'; $("#extraHomolog").style.display=(v==="homolog")?'block':'none'; if(v==="dni"){ $("#lblSub").textContent="Tipo"; $("#selSub").innerHTML=`<option value="">—</option><option value="obtencion">Obtención</option><option value="renovacion">Renovación</option>`; } if(v==="erte"){ $("#lblSub").textContent="Situación"; $("#selSub").innerHTML=`<option value="">—</option><option value="contrato">Alta</option><option value="erte">ERTE</option>`; } renderTramiteResume(); renderLinks(); save(); });
+$("#selSub").onchange=e=>{state.sub=e.target.value||null; renderTramiteResume(); save();}
+$("#selUE").onchange=e=>{state.ueMode=e.target.value||"auto"; renderTramiteResume(); renderLinks(); save();}
+/* Homologación */
+$("#selFinal").onchange=e=>{state.final=e.target.value||null; renderTramiteResume(); save();}
+$("#selSistema").onchange=e=>{state.sistema=e.target.value||null; renderTramiteResume(); save();}
+$("#selNivel").onchange=e=>{state.nivel=e.target.value||null; renderTramiteResume(); save();}
+$("#inpGrado").oninput=e=>{state.gradoText=e.target.value.trim(); save();}
+$("#selPubPriv").onchange=e=>{state.pubpriv=e.target.value||null; renderTramiteResume(); save();}
+$("#selDestino").onchange=e=>{state.destino=e.target.value||null; renderTramiteResume(); save();}
+$("#selIdioma").onchange=e=>{state.idioma=e.target.value||"si"; renderTramiteResume(); save();}
+function renderTramiteResume(){ const f=flow(); let t=state.tramite?DOCS[state.tramite]?.title || state.tramite : "—"; let extra=[]; if(state.tramite==="dni"){ if(f.ref!=="ES") extra.push(`<span class="note tiny">Solo españoles</span>`); if(state.sub) extra.push(state.sub); } if(state.tramite==="residencia"){ extra.push(f.isEU?"UE":"General"); extra.push(labelEstancia(state.estancia)); } if(state.tramite==="homolog"){ extra.push(state.final||"?"); extra.push(state.sistema||"?"); extra.push(state.nivel||"?"); if(state.gradoText) extra.push(`"${state.gradoText}"`); extra.push(state.idioma==="si"?"ESP":"Traducir"); } $("#resumeTramite").innerHTML = `<div class="result tiny" style="padding: 10px 14px;"><b>${t}</b> ${extra.length?("· "+extra.join("·")):""}</div>`; }
+function renderLinks(){ const v=state.tramite; const list=new Set(["clave","fnmt","carpeta","dehu","csv"]); if(v==="dni") list.add("dniecita"); if(v==="renta"){ list.add("aeat"); list.add("renta"); } if(v==="padron") list.add("aytos"); if(v==="residencia"){ list.add("modelosEX"); list.add("citaEX"); list.add("tasa012"); } if(v==="homolog"){ list.add("validaTE"); list.add("tasa107"); list.add("mefp"); list.add("maec"); list.add("ruct"); } if(v==="ss") list.add("importass"); if(v==="paro"||v==="erte") list.add("sepe"); $("#linksOficiales").innerHTML=[...list].map(k=>`<li><a target="_blank" href="${LINKS[k].u}">${LINKS[k].t}</a></li>`).join(""); }
+$("#btnTramiteOK").onclick=()=>{ if(!state.tramite) { console.warn("Elige acreditación."); return; } if(state.tramite==="dni"){ if(flow().ref!=="ES") { console.warn("DNI solo españoles."); return; } if(!state.sub) { console.warn("Elige Obtención/Renovación."); return; } } if(state.tramite==="homolog"){ if(!state.final || !state.sistema || !state.nivel || !state.pubpriv || !state.destino) { console.warn("Completa todos los campos de Homologación."); return; } } badge(2,"OK"); buildChecklist(); state.currentStep = 3; goToStep(3); save(); };
+$("#btnTramiteLimpiar").onclick=()=>{ $("#selTramite").value=""; $("#selSub").innerHTML=""; $("#extraResidencia,#extraHomolog,#subWrap").style.display="none"; Object.assign(state,{tramite:null,sub:null,final:null,sistema:null,nivel:null,gradoText:"",pubpriv:null,destino:null,idioma:"si",ueMode:"auto"}); renderTramiteResume(); renderLinks(); badge(2,"..."); updateBadges(); step(2); save(); };
+
+/* =================== Paso 3 — Checklist =================== */
+function reqsForTramite(){ const f=flow(); const needsApost = f.paises.some(p=>p!=="ES" && COUNTRIES[p]?.apostilla); const intl=[ ...(needsApost?["apostilla"]:[]), ...(state.idioma==="no"?["traduccion"]:[]) ]; switch(state.tramite){ case "dni": return state.sub==="obtencion"?["foto_carnet","cert_nacimiento_dni","padron_volante","tasa_dni"]:["foto_carnet","dni_anterior","padron_volante","tasa_dni"]; case "renta": return ["identificacion_elec","iban","cert_ingresos"]; case "padron": return ["hoja_padron","id_doc","just_dom","autorizacion_titular"]; case "residencia":{ if(state.estancia==="menos90"){ return flow().isEU? ["pasaporte_id"] : ["pasaporte_id","visa_resol"]; } return flow().isEU? ["pasaporte_id","ex18","tasa_012","art7"] : ["pasaporte_id","visa_resol","ex17","tasa_012"]; } case "ss": return ["id_doc","nuss"]; case "erte": return ["demandante"]; case "paro": return ["id_doc","cert_empresa","iban","demandante"];
+/* ===== CAMBIO 1: Usar nombres completos en niveles ===== */
+case "homolog":{
+    if(state.final==="acceso"){ return intl.concat(["unedasiss","ruct_check"]); }
+    if(state.nivel==="eso"||state.nivel==="bachillerato"||state.nivel==="fp") return ["id_doc"].concat(intl).concat(["mefp_sol"]);
+    // Para grado, master, doctorado, regulada
+    return intl.concat(["tasa_107","validaTE","ruct_check"]);
+}
+default: return []; } }
+function actionsForDoc(key){ const map={tasa_dni:"dniecita",padron_volante:"aytos",hoja_padron:"aytos",identificacion_elec:"clave",ex18:"modelosEX",ex17:"modelosEX",tasa_012:"tasa012",nuss:"importass",tasa_107:"tasa107",validaTE:"validaTE",mefp_sol:"mefp",ruct_check:"ruct",demandante:"sepe",cert_empresa:"sepe",unedasiss:"ruct"}; const a=map[key]; return a?[a]:[]; }
+function buildChecklist(){ if(!state.tramite) return; state.checklist = reqsForTramite().map((k,i)=>({ id:"req_"+(i+1), key:k, ok:state.checklist?.find(old=>old.key===k)?.ok || false, block: DOCS[k]?.block||false })); renderChecklist(); badge(3,"OK"); }
+
+// ===== Modificado para incluir botón Gemini =====
+function renderChecklist(){
+    const wrap=$("#checklistWrap");
+    if(!state.checklist.length){ wrap.innerHTML = '<p class="muted">Selecciona acreditación para ver la lista.</p>'; setBtnsDisabled(true); pctBar(0,0); return;}
+    setBtnsDisabled(false);
+
+    const html = state.checklist.map((it,i)=>{
+        const meta=EXPLAIN[it.key]||{q:"?",w:"?",h:"?",p:"?",c:"?"};
+        const docInfo = DOCS[it.key] || {title: it.key, block: false};
+        const id = `cb-${it.key}`;
+        const acts=actionsForDoc(it.key);
+        const linkButtons=acts.map(a=>`<a target="_blank" href="${LINKS[a].u}" style="margin-left: 5px;"><button type="button" class="secondary tiny" style="padding: 2px 6px;">${LINKS[a].t}</button></a>`).join(" ");
+
+        // ===== INICIO GEMINI: Añadir botón Explicar Documento =====
+        const geminiButton = `<button type="button" class="gemini-explain-doc ghost tiny" data-doc-key="${it.key}" style="padding: 2px 6px; margin-left: 5px;">✨ Explicar</button>`;
+        // ===== FIN GEMINI: Añadir botón Explicar Documento =====
+
+        return `
+        <details class="details">
+          <summary class="summary">
+            <label for="${id}" style="font-weight: 500;">
+              <input type="checkbox" id="${id}" class="checklist-cb" data-key="${it.key}" ${it.ok?"checked":""} />
+              <span class="checkmark" style="margin-top: 2px;"></span>
+              ${docInfo.title} ${docInfo.block ? '<span class="note tiny">Bloq.</span>' : ''}
+            </label>
+            <div class="row tiny" style="flex-shrink: 0;">${linkButtons}${geminiButton}</div> <!-- Buttons container -->
+          </summary>
+          <div class="detail-body">
+            <div><b>¿Qué es?</b> ${meta.q||"—"}</div>
+            <div><b>¿Dónde?</b> ${meta.w||"—"} ${docInfo.link?`· <a target="_blank" href="${LINKS[docInfo.link].u}" style="color:#fff; text-decoration: underline;">${LINKS[docInfo.link].t}</a>`:""}</div>
+            <div><b>¿Cómo?</b> ${meta.h||"—"}</div>
+            <div><b>Coste</b> ${meta.c||"—"} · <b>Plazo</b> ${meta.p||"—"}</div>
+          </div>
+        </details>`;
+    }).join("");
+    wrap.innerHTML = html;
+
+    // Listeners Checkbox
+    wrap.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
+        cb.addEventListener("change",(e)=>{
+            const key = e.target.dataset.key;
+            const item = state.checklist.find(x => x.key === key);
+            if (item) {
+                item.ok = e.target.checked;
+                updateActions(); // Actualizar acciones y progreso
+                save(); // Guardar estado
+            }
+        });
+    });
+
+    // Listeners Botones (evitar que abran/cierren details)
+    wrap.querySelectorAll('.summary button, .summary a').forEach(el => {
+        el.addEventListener('click', (e) => {
+            e.stopPropagation(); // Detener la propagación al summary
+        });
+    });
+
+    // ===== INICIO GEMINI: Listeners para botones Explicar Documento =====
+    wrap.querySelectorAll('.gemini-explain-doc').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const docKey = e.target.dataset.docKey;
+            const docTitle = DOCS[docKey]?.title || docKey;
+            handleExplainDocument(docKey, docTitle);
+        });
+    });
+    // ===== FIN GEMINI: Listeners para botones Explicar Documento =====
+
+
+    updateActions(); // Actualizar la barra de progreso y acciones
+}
+
+
+function pctBar(d,t){ $("#badgeProgreso").textContent=`${d}/${t}`; $("#bar").style.width=(t?Math.round(d*100/t):0)+"%"; }
+function updateActions(){
+    if (!state.checklist) return;
+    const allActions = new Set();
+    let done = 0;
+    const total = state.checklist.length;
+
+    state.checklist.forEach(item => {
+        if (item.ok) done++;
+        if (!item.ok) { // Solo mostrar acciones para docs pendientes
+            actionsForDoc(item.key).forEach(linkKey => allActions.add(linkKey));
+        }
+    });
+
+    $("#acciones").innerHTML = allActions.size > 0
+        ? '<ul class="clean" style="display: flex; flex-direction: column; gap: 5px;">' + [...allActions].map(k => `<li><a target="_blank" href="${LINKS[k].u}" style="color: #fff; text-decoration: underline;">${LINKS[k].t}</a></li>`).join("") + '</ul>'
+        : '<p class="muted tiny">Todo listo o sin acciones directas.</p>';
+
+    pctBar(done, total);
+    updateBadges();
+}
+function setBtnsDisabled(dis){ $("#btnTodo").disabled=$("#btnNada").disabled=$("#btnGuardar").disabled=dis; }
+$("#btnTodo").onclick=()=>{ state.checklist.forEach(x=>x.ok=true); renderChecklist(); save(); }
+$("#btnNada").onclick=()=>{ state.checklist.forEach(x=>x.ok=false); renderChecklist(); save(); }
+$("#btnGuardar").onclick=()=>{ save(true); console.log("Progreso guardado."); }; // No usar alert
+
+/* =================== Paso 4 — Recorrido guiado =================== */
+$("#btnGenerarPlan").onclick=()=>{ if(!state.checklist.length) { console.warn("Genera checklist."); return; } const miss = state.checklist.filter(x=>x.block && !x.ok).map(x=>DOCS[x.key]?.title||x.key); if(miss.length) { $("#alertDocs").style.display="block"; $("#alertDocs").textContent = "Faltan bloqueantes: "+miss.join(", "); return; } $("#alertDocs").style.display="none"; state.plan = buildPlan(); renderPlan(); badge(4,"OK"); state.currentStep = 4; goToStep(4); save(); };
+function buildPlan(){ const plan=[]; const f=flow(); const add=(k,t,d,link)=>plan.push({id:"p"+(plan.length+1),k,t,d,link:link?LINKS[link]:null,done:false}); /* ... Lógica interna sin cambios ... */
+    // Lógica de ejemplo (debería ser más robusta)
+    add("preparar", "Preparar Documentos", "Reúne todo lo de la checklist.");
+    if(state.tramite === "dni") add("cita_dni", "Pedir Cita DNI", "Usar enlace oficial.", "dniecita");
+    if(state.tramite === "homolog") add("tasa_107", "Pagar Tasa 107", "Rellenar y pagar modelo 790-107.", "tasa107");
+    if(state.tramite === "homolog" && state.final !== "acceso") add("validaTE", "Subir a Valida-TE", "Crear expediente y subir PDFs.", "validaTE");
+    add("presentar", "Presentar Solicitud", "Acudir a cita / Enviar telemáticamente.");
+    add("seguimiento", "Seguimiento", "Guardar CSV y esperar resolución.");
+return plan; }
+
+function renderPlan(){
+    const container = $("#pasos");
+    if (!state.plan || state.plan.length === 0) {
+        container.innerHTML = '<p class="muted">No se ha generado un plan.</p>';
+        return;
+    }
+    container.innerHTML = state.plan.map((paso, index) => {
+        const id = `paso-${paso.id}`;
+        return `
+            <div class="todo ${paso.done ? 'done' : ''}" style="padding: 12px; display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.1); border-color: rgba(255,255,255,0.2); ${paso.done ? 'background: rgba(0,0,0,0.05);' : ''}">
+                <label class="cb-label" for="${id}" style="flex: 1; margin: 0;">
+                    <input type="checkbox" id="${id}" class="plan-cb" data-id="${paso.id}" ${paso.done ? 'checked' : ''}>
+                    <span class="checkmark"></span>
+                    <div class="stack" style="gap: 2px;">
+                        <span style="font-weight: 600; color: ${paso.done ? '#ffedd5' : '#fff'}; text-decoration: ${paso.done ? 'line-through' : 'none'};">
+                            ${index + 1}. ${paso.t}
+                        </span>
+                        <span class="tiny muted">${paso.d}</span>
+                    </div>
+                </label>
+                ${paso.link ? `<button onclick="window.open('${paso.link.u}', '_blank')" class="secondary tiny" style="padding: 5px 10px; text-decoration: none;">${paso.link.t}</button>` : ''}
+            </div>
+        `;
+    }).join("");
+
+    // Listeners
+    $$(".plan-cb").forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            const id = e.target.dataset.id;
+            const paso = state.plan.find(p => p.id === id);
+            if (paso) {
+                paso.done = e.target.checked;
+                renderPlan(); // Re-render para actualizar estilos
+                save();
+            }
+        });
+    });
+
+    // ===== CAMBIO 2: Llamada a updateEnvioButton restaurada =====
+    updateEnvioButton();
+}
+
+
+/* =================== Paso 5 — Envío/seguimiento =================== */
+// ===== CAMBIO 2: Funciones updateEnvioButton, btnCerrar.onclick, btnGuardarExp.onclick restauradas =====
+function updateEnvioButton(){
+    // Esta función ya no controla un botón en el paso 4, sino el badge
+    // y la lógica de "btnCerrar" (que ahora está oculto)
+    const allDone=state.plan.length > 0 && state.plan.every(x=>x.done); // Check plan exists
+    const btn=$("#btnCerrar"); // Botón original oculto
+    if (btn) {
+        btn.disabled=!allDone;
+        btn.classList.toggle("disabled",!allDone);
+        btn.textContent= allDone ? "Generar comprobante" : "Completa recorrido";
+    }
+    updateBadges();
+}
+$("#btnMarcarTodos").onclick=()=>{ state.plan.forEach(x=>x.done=true); renderPlan(); save(); }
+$("#btnReiniciarPlan").onclick=()=>{ state.plan.forEach(x=>x.done=false); renderPlan(); save(); }
+
+// ===== INICIO CAMBIO 2: Listener para el nuevo botón del paso 4 =====
+$("#btnGoToEnvio").onclick = () => {
+    if (isStepDefined(4)) { // Comprueba si el plan existe
+        state.currentStep = 5;
+        goToStep(5);
+        save();
+    } else {
+        console.warn("Primero genera un plan en el paso 3.");
+    }
+};
+// ===== FIN CAMBIO 2 =====
+
+$("#btnCerrar").onclick=()=>{ if($("#btnCerrar").disabled) return; const id="EXP-"+Math.random().toString(36).slice(2,8).toUpperCase(); const ts=new Date().toISOString(); $("#comprobante").innerHTML=`<b>Comprobante:</b> ${id} · ${ts}`; state.expedienteId=id; setEstado("enviado"); state.currentStep = 5; goToStep(5); save(); }; // Ir al paso 5 al generar comprobante
+$("#btnGuardarExp").onclick=()=>{ state.expedienteId=$("#txtIdExp").value.trim(); $("#savedExp").textContent= state.expedienteId?("ID: "+state.expedienteId):""; save(); };
+
+
+function setEstado(k){ state.estado=k; $("#estado").textContent="Estado: "+(k==="enviado"?"Enviado":k==="en_estudio"?"Estudio":k==="requerimiento"?"Requerido":k==="resuelto"?"Resuelto":"—"); save(); }
+$$("#envio button.ghost[data-st]").forEach(b=> b.onclick=()=> setEstado(b.dataset.st));
+let timerId=null;
+$("#btnRecordatorio").onclick=()=>{ const mins=parseInt($("#mins").value,10); if(!mins||mins<1) { console.warn("Minutos >=1."); return; } if(timerId) clearTimeout(timerId); timerId=setTimeout(()=>{$("#alerta").style.display="block"; $("#alerta").scrollIntoView({behavior:"smooth"});}, mins*60*1000); console.log(`Recordatorio en ${mins} min(s).`); };
+$("#btnCancelar").onclick=()=>{ if(timerId) clearTimeout(timerId); $("#alerta").style.display="none"; console.log("Recordatorio cancelado."); }
+
+/* ===== CAMBIO 4: Nueva función para imprimir ===== */
+function generatePrintSummary() {
+    const f = flow();
+    const tramiteTitle = state.tramite ? (DOCS[state.tramite]?.title || state.tramite) : "Trámite Desconocido";
+    const paisRef = state.ref ? (COUNTRIES[state.ref]?.nombre || state.ref) : "No especificada";
+
+    let html = `<h1>Resumen de Trámite: ${tramiteTitle}</h1>`;
+    html += `<p><strong>Nacionalidad de Referencia:</strong> ${paisRef}</p>`;
+    html += `<p><strong>Estancia:</strong> ${labelEstancia(state.estancia)}</p>`;
+
+    if(state.checklist.length > 0) {
+      html += `<h2>Documentos Requeridos</h2><ul>`;
+      state.checklist.forEach(item => {
+          const doc = DOCS[item.key] || { title: item.key };
+          const info = EXPLAIN[item.key] || { q: '' };
+          html += `<li><strong>${doc.title}</strong> ${info.q ? `(${info.q})` : ''}</li>`;
+      });
+      html += `</ul>`;
+    }
+
+    if(state.plan.length > 0) {
+      html += `<h2>Hoja de Ruta</h2><ol>`;
+      state.plan.forEach(paso => {
+          html += `<li><strong>${paso.t}</strong> ${paso.d ? `(${paso.d})` : ''}</li>`;
+      });
+      html += `</ol>`;
+    }
+
+    $("#print-summary").innerHTML = html;
+}
+$("#btnImprimir").onclick = () => {
+    generatePrintSummary();
+    window.print();
+};
+
+/* =================== Persistencia =================== */
+function save(notify){ if (currentTragmitesIndex === -1) return; allTragmites[currentTragmitesIndex] = {...state}; store.set(STORAGE_KEY, allTragmites); if(notify) console.log(`Trámite ${currentTragmitesIndex} guardado`); }
+function loadState(tramiteData) { Object.assign(state, {...newStateTemplate, ...tramiteData}); } // Asegurar que se usa plantilla
+function restoreUI(){
+    if (!state) return;
+    // Paso 1
+    $$(".pais").forEach(p => p.checked = state.paises.includes(p.value));
+    $("#selEstancia").value = state.estancia;
+    // Ocultar selector de ref si solo hay un país al cargar
+    const refSelectContainer = $("#selRef").previousElementSibling; // BUG FIX: Seleccionar label
+    if (refSelectContainer) { // BUG FIX: Verificar si existe el label
+        refSelectContainer.style.display = state.paises.length > 1 ? 'block' : 'none';
+    }
+    $("#selRef").style.display = state.paises.length > 1 ? 'block' : 'none'; // BUG FIX: Ocultar select también
+    updateRefOptions(); // Llamar antes de setear valor
+    $("#selRef").value = state.ref;
+    if (state.paises.length > 0 && state.estancia) { // Re-renderizar info solo si hay datos
+        const f = flow();
+        const blocks=state.paises.map(c=>{ const p=COUNTRIES[c]; const apost=p.apostilla?" · Apostilla":""; return `<div class="tiny">• <b>${p.nombre}</b> (${p.ue?"UE":"No-UE"})${apost}</div>`; }).join("");
+        $("#paisInfo").innerHTML=blocks+`<div class="tiny muted" style="margin-top:6px">Est: <b>${labelEstancia(state.estancia)}</b>. Rég: <b>${f.isEU?"UE":"General"}</b></div>`;
+        $("#chipsPais").innerHTML=state.paises.map(c=>`<span class="badge">${COUNTRIES[c].nombre}</span>`).join("");
+    } else { // Limpiar si no hay datos
+         $("#paisInfo").textContent="Selecciona opciones.";
+         $("#chipsPais").innerHTML="";
+    }
+
+    // Paso 2
+    $("#selTramite").value = state.tramite || "";
+    // Disparar evento change para mostrar/ocultar sub-secciones
+    $("#selTramite").dispatchEvent(new Event('change'));
+    $("#selSub").value = state.sub || "";
+    $("#selUE").value = state.ueMode || "auto";
+    $("#selFinal").value = state.final || "";
+    $("#selSistema").value = state.sistema || "";
+    $("#selNivel").value = state.nivel || "";
+    $("#inpGrado").value = state.gradoText || "";
+    $("#selPubPriv").value = state.pubpriv || "";
+    $("#selDestino").value = state.destino || "";
+    $("#selIdioma").value = state.idioma || "si";
+    renderTramiteResume();
+    renderLinks();
+
+    // Paso 3
+    // Solo construir si hay trámite, si no, se limpiará en renderChecklist
+    if(state.tramite) { buildChecklist(); }
+    renderChecklist();
+
+    // Paso 4
+    if(state.plan.length > 0) { renderPlan(); } // Re-dibuja el plan solo si existe
+
+    // Paso 5
+    // ===== CAMBIO 2: Restaurar ID expediente y estado =====
+    $("#txtIdExp").value = state.expedienteId || "";
+    $("#savedExp").textContent = state.expedienteId ? ("ID: "+state.expedienteId) : "";
+    if(state.estado) setEstado(state.estado);
+
+    updateBadges();
+    step(state.currentStep);
+}
+
+/* =================== Lógica de Home y Perfil =================== */
+function initApp() {
+  allTragmites = store.get(STORAGE_KEY, []);
+  $("#btnContinueProcess").style.display = (allTragmites.length > 0) ? "block" : "none";
+  showView('home');
+}
+function startNewProcess() {
+    const newId = Date.now().toString();
+    state = {...newStateTemplate, id: newId};
+    allTragmites.push(state);
+    currentTragmitesIndex = allTragmites.length - 1;
+    save(false);
+    restoreUI();
+    showView('wizard');
+    goToStep(1);
+}
+$("#btnNewProcess").onclick = startNewProcess;
+$("#btnStartAnotherNew").onclick = startNewProcess;
+$("#btnContinueProcess").onclick = () => { renderProfileList(); showView('profile'); };
+function renderProfileList() {
+    const listContainer = $("#tramites-list");
+    if (!allTragmites || allTragmites.length === 0) { listContainer.innerHTML = '<p class="muted">No hay trámites guardados.</p>'; return; }
+    listContainer.innerHTML = allTragmites.map((tramite, index) => {
+        const tramiteNombre = tramite.tramite ? (DOCS[tramite.tramite]?.title || tramite.tramite) : "Nuevo Trámite";
+        const pasoActual = `Paso ${tramite.currentStep}`;
+        /* ===== CAMBIO 2: Estado restaurado ===== */
+        const status = (tramite.estado === "enviado" || tramite.estado === "en_estudio" || tramite.estado === "requerimiento" || tramite.estado === "resuelto") ?
+                       tramite.estado.charAt(0).toUpperCase() + tramite.estado.slice(1).replace("_", " ") :
+                       (tramite.currentStep > 1 ? 'En Progreso' : 'Iniciado');
+        return `<div class="tramite-list-item" data-index="${index}"><div><h3>${tramiteNombre}</h3><span class="tiny muted">${pasoActual}</span></div><span class="badge">${status}</span></div>`;
+    }).join("");
+    $$(".tramite-list-item").forEach(item => { item.onclick = () => { loadTramite(parseInt(item.dataset.index, 10)); }; });
+}
+function loadTramite(index) {
+    if (index >= 0 && index < allTragmites.length) {
+        currentTragmitesIndex = index;
+        loadState(allTragmites[index]);
+        restoreUI();
+        showView('wizard');
+        goToStep(state.currentStep);
+    }
+}
+$("#btnSaveAndExit").onclick = () => { save(false); currentTragmitesIndex = -1; initApp(); showView('home'); };
+
+// ===== INICIO CAMBIO 2: Lógica de clic del stepper actualizada =====
+$$(".step").forEach(stepEl => {
+    stepEl.onclick = () => {
+        const targetStepNum = parseInt(stepEl.dataset.step, 10);
+        // Permitir clic solo si el paso de destino está definido (o es el 1)
+        if (targetStepNum === 1 || isStepDefined(targetStepNum)) {
+            // Y solo si el paso ANTERIOR está definido (o es el 1)
+            // Esto evita saltar pasos que aún no se pueden definir.
+            if (targetStepNum === 1 || isStepDefined(targetStepNum - 1)) {
+                 goToStep(targetStepNum);
+            } else {
+                console.warn(`Aún no puedes saltar al paso ${targetStepNum}. Completa los pasos anteriores.`);
+            }
+        } else {
+            console.warn(`El paso ${targetStepNum} aún no está disponible.`);
+        }
+    };
+});
+// ===== FIN CAMBIO 2 =====
+
+/* =================== Scroll con cambio de fondo =================== */
+const body = document.body;
+const root = document.documentElement;
+const sections = $$('.scroll-section'); // Usar $$
+const homeSection = $('#home-container'); // Usar $
+const aboutSection = $('#about-us'); // El original
+const disclaimerSection = $('#disclaimer'); // Nueva sección disclaimer
+
+// Colores por defecto (negro)
+const defaultBg = '#111111';
+const defaultOverlay = 'rgba(17, 17, 17, 0.9)';
+const defaultImage = "url('bg-madrid-cibeles.jpg')";
+const sunsetImage = "url('bg-madrid-sunset.jpg')";
+
+const observer = new IntersectionObserver((entries) => {
+    let entryInView = entries.find(e => e.isIntersecting);
+    if (!entryInView) return;
+
+    const section = entryInView.target;
+    const fgColor = section.dataset.fg || 'var(--fg)';
+
+    // Si es una scroll-section (Cómo Funciona o Disclaimer)
+    if (section.classList.contains('scroll-section')) {
+        const bgColor = section.dataset.bg || defaultBg;
+        body.style.backgroundColor = bgColor;
+
+        // Ajustar color de texto de la sección
+        section.style.color = fgColor;
+
+        // Quitar imagen y overlay para que se vea el color
+        root.style.setProperty('--bg-image', 'none');
+        root.style.setProperty('--bg-overlay', 'rgba(0,0,0,0)');
+
+        // ===== INICIO CAMBIO 3: Añadir clase para desactivar filtro =====
+        body.classList.add("scroll-section-active");
+        // ===== FIN CAMBIO 3 =====
+
+    } else if (section.id === 'about-us') {
+        // Si es "About Us", usar la imagen de atardecer (comportamiento original)
+        body.style.backgroundColor = defaultBg;
+        root.style.setProperty('--bg-image', sunsetImage);
+        root.style.setProperty('--bg-overlay', defaultOverlay);
+        section.style.color = 'var(--fg)'; // Reset color
+
+        // ===== INICIO CAMBIO 3: Quitar clase =====
+        body.classList.remove("scroll-section-active");
+        // ===== FIN CAMBIO 3 =====
+
+    } else if (section.id === 'home-container') {
+        // Si es "Home" (default)
+        body.style.backgroundColor = defaultBg;
+        root.style.setProperty('--bg-image', defaultImage);
+        root.style.setProperty('--bg-overlay', defaultOverlay);
+        section.style.color = 'var(--fg)'; // Reset color
+
+        // ===== INICIO CAMBIO 3: Quitar clase =====
+        body.classList.remove("scroll-section-active");
+        // ===== FIN CAMBIO 3 =====
+    }
+
+}, {
+    threshold: 0.45 // Activar cuando el 45% de la sección esté visible
+});
+
+// Observar todas las secciones relevantes
+if(homeSection) observer.observe(homeSection);
+if(aboutSection) observer.observe(aboutSection);
+sections.forEach(section => { // Esto incluye las de "Cómo Funciona" y "Disclaimer"
+    observer.observe(section);
+});
+
+// Listener de fallback para la parte superior
+window.addEventListener('scroll', () => {
+    if (window.scrollY < 200) { // Si estamos muy arriba
+        body.style.backgroundColor = defaultBg;
+        root.style.setProperty('--bg-image', defaultImage);
+        root.style.setProperty('--bg-overlay', defaultOverlay);
+        if(homeSection) homeSection.style.color = 'var(--fg)';
+        if(aboutSection) aboutSection.style.color = 'var(--fg)';
+
+        // ===== INICIO CAMBIO 3: Quitar clase en fallback =====
+        body.classList.remove("scroll-section-active");
+        // ===== FIN CAMBIO 3 =====
+    }
+}, { passive: true });
+/* =================== Fin Scroll =================== */
+
+/* =================== Menú y UI Enhancements =================== */
+const menuButton = $("#menu-button");
+const menuPanel = $("#menu-panel");
+menuButton.onclick = (e) => {
+    e.stopPropagation(); // Evitar que el click se propague al document
+    menuButton.classList.toggle("open");
+    menuPanel.classList.toggle("open");
+};
+document.addEventListener('click', (event) => {
+    if (menuPanel.classList.contains('open') && !menuPanel.contains(event.target) && !menuButton.contains(event.target)) {
+        menuButton.classList.remove("open");
+        menuPanel.classList.remove("open");
+    }
+});
+const closeMenu = () => { menuButton.classList.remove("open"); menuPanel.classList.remove("open"); };
+$("#menu-home").onclick = (e) => { e.preventDefault(); initApp(); showView('home'); closeMenu(); };
+$("#menu-profile").onclick = (e) => { e.preventDefault(); renderProfileList(); showView('profile'); closeMenu(); };
+// ===== INICIO NUEVA SECCIÓN EMAIL: Listener menú =====
+$("#menu-email-draft").onclick = (e) => { e.preventDefault(); showView('emailDraft'); closeMenu(); };
+// ===== FIN NUEVA SECCIÓN EMAIL: Listener menú =====
+$("#menu-about").onclick = (e) => { e.preventDefault(); showView('home'); setTimeout(() => $("#about-us")?.scrollIntoView({ behavior: 'smooth' }), 50); closeMenu(); }; // Smooth scroll
+$("#menu-links").onclick = (e) => { e.preventDefault(); showView('home'); setTimeout(() => $("#enlaces")?.scrollIntoView({ behavior: 'smooth' }), 50); closeMenu(); }; // Smooth scroll
+
+(function(){ // Cursor glow effect
+  const glow = document.getElementById('cursor-glow');
+  if (glow && window.matchMedia('(pointer: fine)').matches) { // Check for fine pointer
+    let lastX = 0, lastY = 0;
+    let ticking = false;
+    document.body.onpointermove = (event) => {
+      lastX = event.clientX;
+      lastY = event.clientY;
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          glow.style.transform = `translate(${lastX}px, ${lastY}px)`;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+  } else if (glow) {
+      glow.style.display = 'none'; // Hide on coarse pointers
+  }
+})();
+
+// ===== INICIO GEMINI: Lógica del Modal y API =====
+const geminiModal = $("#gemini-modal");
+const geminiModalTitle = $("#gemini-modal-title");
+const geminiModalBody = $("#gemini-modal-body");
+const geminiModalCloseBtn = $("#gemini-modal-close");
+
+function showGeminiModal(title) {
+  geminiModalTitle.textContent = title;
+  geminiModalBody.innerHTML = '<div class="loading-spinner"></div>'; // Show loader initially
+  geminiModal.classList.add("visible");
+}
+
+function hideGeminiModal() {
+  geminiModal.classList.remove("visible");
+}
+
+geminiModalCloseBtn.onclick = hideGeminiModal;
+geminiModal.onclick = (e) => { // Close modal if clicking outside content
+  if (e.target === geminiModal) {
+    hideGeminiModal();
+  }
+};
+
+// --- Funciones para llamar a la API de Gemini ---
+
+// Función para llamar a la API de Gemini con reintentos
+async function callGeminiAPI(prompt, retries = 3, delay = 1000) {
+  const apiKey = ""; // Dejar vacío para que Canvas lo gestione
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+  const payload = {
+    contents: [{ parts: [{ text: prompt }] }],
+    // Podríamos añadir system instructions si fuera necesario
+    // systemInstruction: { parts: [{ text: "Eres un asistente experto en trámites españoles..." }] }
+  };
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      if (response.status === 429 && retries > 0) { // Error de cuota (Too Many Requests)
+        console.warn(`Gemini API rate limit hit. Retrying in ${delay / 1000}s... (${retries} retries left)`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return callGeminiAPI(prompt, retries - 1, delay * 2); // Exponential backoff
+      }
+       // Log detailed error for debugging
+       const errorBody = await response.text();
+       console.error(`HTTP error! status: ${response.status} - ${errorBody}`);
+       throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log("Gemini API Response:", result); // Log para depuración
+
+    const candidate = result.candidates?.[0];
+    if (candidate && candidate.content?.parts?.[0]?.text) {
+      return candidate.content.parts[0].text;
+    } else if (candidate?.finishReason === 'SAFETY') {
+        return "Lo siento, no puedo generar una respuesta para esa solicitud debido a restricciones de seguridad.";
+     } else if (candidate?.finishReason && candidate.finishReason !== 'STOP') {
+        console.warn(`Gemini generation finished with reason: ${candidate.finishReason}`);
+        return `Error: La generación de texto se detuvo inesperadamente (${candidate.finishReason}).`;
+    } else {
+      console.error("Respuesta inesperada o vacía de la API de Gemini:", result);
+      return "Error: No se pudo obtener una respuesta válida de la API.";
+    }
+  } catch (error) {
+    console.error('Error llamando a la API de Gemini:', error);
+     if (retries > 0) {
+        console.warn(`Network or other error. Retrying in ${delay / 1000}s... (${retries} retries left)`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return callGeminiAPI(prompt, retries - 1, delay * 2); // Exponential backoff
+    }
+    return `Error al contactar con el asistente IA: ${error.message}`;
+  }
+}
+
+// --- Manejadores para los botones Gemini ---
+
+async function handleExplainDocument(docKey, docTitle) {
+  showGeminiModal(`Explicando: ${docTitle}`);
+  const prompt = `Actúa como un asistente experto en trámites administrativos en España. Proporciona una explicación clara y concisa (máximo 3 párrafos) sobre el documento "${docTitle}" (clave interna: ${docKey}). Incluye:
+1.  **Qué es** y para qué sirve en el contexto de los trámites españoles.
+2.  **Dónde y cómo** se obtiene generalmente.
+3.  Algún **consejo práctico** o dificultad común al obtenerlo.
+Dirígete al usuario de forma amigable y directa. Formatea la respuesta usando Markdown básico (negritas, listas).`;
+
+  const explanation = await callGeminiAPI(prompt);
+  // Simple Markdown to HTML conversion (bold and lists)
+  let htmlExplanation = explanation
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+      .replace(/^\* (.*?)(\n|$)/gm, '<li>$1</li>') // List items
+      .replace(/(\<\/li\>)(?!<ul)/g, '$1</ul>') // Close UL after last LI
+      .replace(/(<li>.*<\/li\>)/, '<ul>$1') // Open UL before first LI
+      .replace(/\n/g, '<br>'); // Newlines
+
+  geminiModalBody.innerHTML = `<p>${htmlExplanation}</p>`;
+}
+
+
+async function handleSummarizeTramite() {
+    if (!state.tramite) {
+        console.warn("Selecciona un trámite primero."); // No usar alert
+        return;
+    }
+    const tramiteTitle = DOCS[state.tramite]?.title || state.tramite;
+    showGeminiModal(`Resumiendo: ${tramiteTitle}`);
+
+    // Construir contexto adicional basado en el estado
+    let context = `Trámite: ${tramiteTitle}`;
+    if(state.sub) context += ` (${state.sub})`;
+    if(state.tramite === 'residencia') {
+        context += `. Situación: ${flow().isEU ? 'Ciudadano UE/asimilado' : 'Régimen General'}. Estancia solicitada: ${labelEstancia(state.estancia)}`;
+    }
+    if(state.tramite === 'homolog') {
+        context += `. Finalidad: ${state.final}. Sistema origen: ${state.sistema}. Nivel: ${state.nivel}.`;
+    }
+
+    const prompt = `Actúa como un asistente experto en trámites administrativos en España. Proporciona un resumen claro y sencillo (máximo 2-3 párrafos) sobre el siguiente trámite, considerando el contexto proporcionado:
+${context}
+
+Explica brevemente:
+1.  **Cuál es el objetivo principal** de este trámite.
+2.  **Quiénes suelen necesitarlo**.
+3.  **Los pasos generales** o fases clave del proceso (sin entrar en detalles de documentos específicos).
+Dirígete al usuario de forma amigable y directa, como si le estuvieras explicando el trámite a alguien no familiarizado con la burocracia española. Formatea usando Markdown básico (negritas, listas).`;
+
+    const summary = await callGeminiAPI(prompt);
+     // Simple Markdown to HTML conversion (bold and lists)
+    let htmlSummary = summary
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+      .replace(/^\* (.*?)(\n|$)/gm, '<li>$1</li>') // List items
+      .replace(/(\<\/li\>)(?!<ul)/g, '$1</ul>') // Close UL after last LI
+      .replace(/(<li>.*<\/li\>)/, '<ul>$1') // Open UL before first LI
+      .replace(/\n/g, '<br>'); // Newlines
+
+    geminiModalBody.innerHTML = `<p>${htmlSummary}</p>`;
+}
+
+
+// ===== INICIO NUEVA SECCIÓN EMAIL: Lógica =====
+function populateTramiteEmailSelector() {
+    const select = $("#selEmailTramite");
+    if (!select) return;
+
+    select.innerHTML = '<option value="">— Selecciona un trámite —</option>'; // Reset
+    allTragmites.forEach((tramite, index) => {
+        if (tramite.tramite) { // Solo añadir trámites que tengan un tipo definido
+            const tramiteNombre = DOCS[tramite.tramite]?.title || tramite.tramite;
+            const option = document.createElement('option');
+            option.value = index; // Usar el índice como valor
+            option.textContent = `${tramiteNombre} (ID: ${tramite.id.substring(0, 6)}...)`;
+            select.appendChild(option);
+        }
+    });
+}
+
+async function handleGenerateEmailDraft() {
+    const tramiteIndex = $("#selEmailTramite").value;
+    const purpose = $("#selEmailPurpose").value;
+    const details = $("#txtEmailDetails").value.trim();
+    const resultTextarea = $("#txtEmailDraftResult");
+    const loadingIndicator = $("#email-loading");
+
+    if (tramiteIndex === "") {
+        resultTextarea.value = "Por favor, selecciona un trámite guardado.";
+        return;
+    }
+
+    const selectedTramite = allTragmites[parseInt(tramiteIndex, 10)];
+    if (!selectedTramite || !selectedTramite.tramite) {
+         resultTextarea.value = "Error: No se pudo cargar la información del trámite seleccionado.";
+         return;
+    }
+
+    const tramiteTitle = DOCS[selectedTramite.tramite]?.title || selectedTramite.tramite;
+    let tramiteContext = `Trámite: ${tramiteTitle}`;
+    if(selectedTramite.sub) tramiteContext += ` (${selectedTramite.sub})`;
+    if(selectedTramite.expedienteId) tramiteContext += `. ID/Ref: ${selectedTramite.expedienteId}`;
+    if(selectedTramite.ref) tramiteContext += `. Nacionalidad Ref: ${COUNTRIES[selectedTramite.ref]?.nombre}`;
+
+
+    // Determinar destinatario probable (simplificado)
+    let destinatario = "la entidad correspondiente";
+    if (['dni', 'residencia', 'ex17', 'ex18', 'tasa012'].includes(selectedTramite.tramite)) destinatario = "la Oficina de Extranjería o Comisaría de Policía";
+    else if (['renta', 'cert_ingresos'].includes(selectedTramite.tramite)) destinatario = "la Agencia Tributaria (AEAT)";
+    else if (['padron', 'hoja_padron', 'padron_volante'].includes(selectedTramite.tramite)) destinatario = "el Ayuntamiento";
+    else if (['homolog', 'tasa107', 'validaTE', 'mefp_sol'].includes(selectedTramite.tramite)) destinatario = "el Ministerio de Educación/Universidades";
+    else if (['paro', 'erte', 'cert_empresa', 'demandante'].includes(selectedTramite.tramite)) destinatario = "el Servicio Público de Empleo Estatal (SEPE)";
+    else if (['ss', 'nuss', 'importass'].includes(selectedTramite.tramite)) destinatario = "la Tesorería General de la Seguridad Social (TGSS)";
+
+    const purposeTextMap = {
+        consultar_estado: "consultar el estado actual",
+        aportar_documentacion: "aportar documentación adicional requerida",
+        solicitar_informacion: "solicitar información adicional",
+        otro: "tratar un asunto específico"
+    };
+    let purposeText = purposeTextMap[purpose] || "tratar un asunto";
+    if (purpose === 'otro' && details) {
+        purposeText = `tratar el siguiente asunto: ${details}`;
+    } else if (purpose !== 'otro' && details) {
+         purposeText += `, específicamente sobre: ${details}`;
+    }
+
+
+    const prompt = `Actúa como un asistente de redacción experto en comunicaciones administrativas en España. Redacta un borrador de correo electrónico formal y conciso para ${destinatario}.
+
+    **Contexto del trámite:**
+    * ${tramiteContext}
+
+    **Propósito del correo:** ${purposeText}.
+
+    **Instrucciones:**
+    1.  Utiliza un tono formal y respetuoso.
+    2.  Incluye un saludo adecuado (Ej: "Estimados/as señores/as,").
+    3.  Identifica claramente el trámite en cuestión y, si se conoce, el número de expediente o referencia (${selectedTramite.expedienteId || '[Indicar si se tiene]'}).
+    4.  Expón el motivo del correo de forma clara según el propósito indicado.
+    5.  Si el propósito es 'aportar_documentacion', menciona que se adjunta la documentación solicitada (aunque no la adjuntes realmente).
+    6.  Incluye una despedida formal (Ej: "Atentamente,").
+    7.  Deja espacios para que el usuario rellene su nombre completo y datos de contacto al final:
+        [Tu Nombre Completo]
+        [Tu DNI/NIE/Pasaporte]
+        [Tu Teléfono de Contacto]
+        [Tu Correo Electrónico]
+    8.  NO inventes información que no se proporciona. Si falta algo crucial (como el número de expediente), indícalo entre corchetes.
+    9.  El resultado debe ser únicamente el texto del correo, sin introducciones ni comentarios adicionales. Empieza directamente con "Asunto: ...".`;
+
+    resultTextarea.value = ""; // Limpiar antes de generar
+    loadingIndicator.style.display = 'block'; // Mostrar spinner
+
+    const emailDraft = await callGeminiAPI(prompt);
+
+    loadingIndicator.style.display = 'none'; // Ocultar spinner
+    resultTextarea.value = emailDraft; // Mostrar borrador
+}
+
+// Asignar manejador al botón de Generar Email
+$("#btnGenerateEmailDraft").onclick = handleGenerateEmailDraft;
+
+
+// ===== FIN NUEVA SECCIÓN EMAIL: Lógica =====
+
+
+// Asignar manejador al botón de Resumir Trámite
+$("#btnGeminiSummarizeTramite").onclick = handleSummarizeTramite;
+
+// ===== FIN GEMINI: Lógica del Modal y API =====
+
+initApp(); // Ejecutar al cargar la página
+
+// ===== INICIO CORRECCIÓN NAVEGADOR: Cerrar DOMContentLoaded =====
+});
+// ===== FIN CORRECCIÓN NAVEGADOR =====
+</script>
+
+</body>
+</html>
