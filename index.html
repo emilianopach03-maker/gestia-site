@@ -949,7 +949,35 @@ hr { border-color: var(--line); margin: 24px 0; }
     </section>
   </div>
   <!-- ===== FIN NUEVA SECCIÓN EMAIL: Contenedor HTML ===== -->
+<section id="chat-rapido" style="background: #1a1a1a; border: 1px solid var(--line); box-shadow: none;">
+    <h2 style="color: #fff; border-color: var(--line);">Chat Rápido</h2>
+    <p class="muted">
+      ¿Tienes una pregunta general sobre un trámite? Escríbela aquí. 
+      <br>La IA no tiene acceso a tus datos de trámite, solo es para consultas generales.
+    </p>
+    
+    <div class="stack">
+      <label for="chat-prompt" style="color: #fff;">Tu Pregunta:</label>
+      
+      <textarea id="chat-prompt" rows="3" placeholder="Ej: ¿Qué es la Apostilla de La Haya y para qué sirve?"></textarea>
+      
+      <div class="row" style="justify-content: space-between; align-items: flex-start;">
+        
+        <button id="btn-chat-send" style="margin-top: 10px;">✨ Enviar Pregunta</button>
+        
+        <div id="chat-loading" style="display: none; text-align: center; margin-top: 10px;">
+            <div class="loading-spinner" style="margin: 5px auto; border-color: #555; border-top-color: var(--orange-500);"></div>
+            <span class="tiny muted">Generando...</span>
+        </div>
+      </div>
 
+      <label for="chat-result" style="margin-top: 15px; color: #fff;">Respuesta de la IA:</label>
+      
+      <div id="chat-result" class="result" style="min-height: 100px; font-size: 15px; line-height: 1.6; padding: 14px; background: #2b2b2b;">
+        <p class="muted tiny">Aquí aparecerá la respuesta...</p>
+      </div>
+    </div>
+  </section>
   <section id="about-us" style="background: transparent; border: 0; box-shadow: none;">
     <h2>Simplifica tu Papeleo, Recupera tu Tiempo</h2>
     <p>¿Cansado del laberinto burocrático? Gestia es tu guía inteligente en España. Te ayudamos a completar trámites de forma clara y sencilla, ahorrándote estrés y horas perdidas. Únete a nuestra comunidad y navega la administración con confianza.</p>
@@ -1550,6 +1578,55 @@ function restoreUI(){
 }
 
 /* =================== Lógica de Home y Perfil =================== */
+// --- Helper para convertir Markdown simple a HTML ---
+// (Basado en la lógica que ya usas para los otros modales)
+function simpleMarkdownToHTML(text) {
+  // Primero, escapamos HTML básico para evitar que el usuario inyecte etiquetas
+  let safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  // Ahora, aplicamos el formato Markdown
+  return safeText
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Negrita
+    .replace(/(\n|^)\* (.*?)(\n|$)/g, '$1<li>$2</li>') // Listas
+    .replace(/(\<\/li\>)(?!<ul)/g, '$1</ul>')       // Cerrar <ul>
+    .replace(/(<li>.*<\/li\>)/, '<ul>$1')           // Abrir <ul>
+    .replace(/\n/g, '<br>');                        // Saltos de línea
+}
+
+// --- Lógica para el Chat Rápido ---
+const chatPrompt = $("#chat-prompt");
+const chatResult = $("#chat-result");
+const chatButton = $("#btn-chat-send");
+const chatLoading = $("#chat-loading");
+
+chatButton.onclick = async () => {
+  const prompt = chatPrompt.value.trim();
+  if (!prompt) {
+    chatResult.innerHTML = '<p class="muted tiny">Por favor, escribe una pregunta.</p>';
+    return;
+  }
+
+  // Mostrar estado de carga (similar al de la sección de email)
+  chatButton.disabled = true;
+  chatLoading.style.display = 'block';
+  chatResult.innerHTML = '<p class="muted tiny">Generando respuesta...</p>';
+
+  try {
+    // ¡Reutilizamos la misma función de API que ya tienes funcionando!
+    const responseText = await callGeminiAPI(prompt); 
+    
+    // Convertir la respuesta de Markdown a HTML y mostrarla
+    chatResult.innerHTML = simpleMarkdownToHTML(responseText);
+
+  } catch (error) {
+    console.error("Error en el chat rápido:", error);
+    chatResult.innerHTML = `<p style="color: #fca5a5;">Error: No se pudo obtener una respuesta. ${error.message}</p>`;
+  }
+
+  // Ocultar estado de carga
+  chatButton.disabled = false;
+  chatLoading.style.display = 'none';
+};
 function initApp() {
   allTragmites = store.get(STORAGE_KEY, []);
   $("#btnContinueProcess").style.display = (allTragmites.length > 0) ? "block" : "none";
@@ -1997,4 +2074,5 @@ initApp(); // Ejecutar al cargar la página
 
 </body>
 </html>
+
 
