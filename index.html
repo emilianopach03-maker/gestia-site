@@ -1771,15 +1771,15 @@ geminiModal.onclick = (e) => { // Close modal if clicking outside content
 
 // Función para llamar a la API de Gemini con reintentos
 async function callGeminiAPI(prompt, retries = 3, delay = 1000) {
-  const apiKey = ""; // Dejar vacío para que Canvas lo gestione
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+  // 1. The URL now points to OUR backend, not Google's.
+  const apiUrl = '/api/generate';
+
   const payload = {
-    contents: [{ parts: [{ text: prompt }] }],
-    // Podríamos añadir system instructions si fuera necesario
-    // systemInstruction: { parts: [{ text: "Eres un asistente experto en trámites españoles..." }] }
+    prompt: prompt // Send the prompt to our server
   };
 
   try {
+    // 2. The fetch call now goes to our Vercel serverless function
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1787,43 +1787,36 @@ async function callGeminiAPI(prompt, retries = 3, delay = 1000) {
     });
 
     if (!response.ok) {
-      if (response.status === 429 && retries > 0) { // Error de cuota (Too Many Requests)
-        console.warn(`Gemini API rate limit hit. Retrying in ${delay / 1000}s... (${retries} retries left)`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        return callGeminiAPI(prompt, retries - 1, delay * 2); // Exponential backoff
-      }
-       // Log detailed error for debugging
-       const errorBody = await response.text();
-       console.error(`HTTP error! status: ${response.status} - ${errorBody}`);
-       throw new Error(`HTTP error! status: ${response.status}`);
+       const errorBody = await response.json();
+       console.error(`Server error! status: ${response.status}`, errorBody);
+       throw new Error(`Server error! status: ${response.status}`);
     }
 
     const result = await response.json();
-    console.log("Gemini API Response:", result); // Log para depuración
+    console.log("Response from our backend:", result);
 
+    // 3. Parse the response (which contains the Google response)
     const candidate = result.candidates?.[0];
     if (candidate && candidate.content?.parts?.[0]?.text) {
       return candidate.content.parts[0].text;
     } else if (candidate?.finishReason === 'SAFETY') {
         return "Lo siento, no puedo generar una respuesta para esa solicitud debido a restricciones de seguridad.";
-     } else if (candidate?.finishReason && candidate.finishReason !== 'STOP') {
-        console.warn(`Gemini generation finished with reason: ${candidate.finishReason}`);
-        return `Error: La generación de texto se detuvo inesperadamente (${candidate.finishReason}).`;
     } else {
       console.error("Respuesta inesperada o vacía de la API de Gemini:", result);
       return "Error: No se pudo obtener una respuesta válida de la API.";
     }
+
   } catch (error) {
-    console.error('Error llamando a la API de Gemini:', error);
-     if (retries > 0) {
+    console.error('Error llamando a nuestro backend:', error);
+    // Handle retries just in case of network issues
+    if (retries > 0) {
         console.warn(`Network or other error. Retrying in ${delay / 1000}s... (${retries} retries left)`);
         await new Promise(resolve => setTimeout(resolve, delay));
-        return callGeminiAPI(prompt, retries - 1, delay * 2); // Exponential backoff
+        return callGeminiAPI(prompt, retries - 1, delay * 2);
     }
     return `Error al contactar con el asistente IA: ${error.message}`;
   }
 }
-
 // --- Manejadores para los botones Gemini ---
 
 async function handleExplainDocument(docKey, docTitle) {
@@ -2004,3 +1997,4 @@ initApp(); // Ejecutar al cargar la página
 
 </body>
 </html>
+
