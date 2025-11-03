@@ -1852,20 +1852,73 @@ function startNewProcess() {
 $("#btnNewProcess").onclick = startNewProcess;
 $("#btnStartAnotherNew").onclick = startNewProcess;
 $("#btnContinueProcess").onclick = () => { renderProfileList(); showView('profile'); };
+    
 function renderProfileList() {
     const listContainer = $("#tramites-list");
-    if (!allTragmites || allTragmites.length === 0) { listContainer.innerHTML = '<p class="muted">No hay trámites guardados.</p>'; return; }
+    if (!allTragmites || allTragmites.length === 0) {
+        listContainer.innerHTML = '<p class="muted">No hay trámites guardados.</p>';
+        return;
+    }
+
     listContainer.innerHTML = allTragmites.map((tramite, index) => {
         const tramiteNombre = tramite.tramite ? (DOCS[tramite.tramite]?.title || tramite.tramite) : "Nuevo Trámite";
         const pasoActual = `Paso ${tramite.currentStep}`;
-        /* ===== CAMBIO 2: Estado restaurado ===== */
         const status = (tramite.estado === "enviado" || tramite.estado === "en_estudio" || tramite.estado === "requerimiento" || tramite.estado === "resuelto") ?
                        tramite.estado.charAt(0).toUpperCase() + tramite.estado.slice(1).replace("_", " ") :
                        (tramite.currentStep > 1 ? 'En Progreso' : 'Iniciado');
-        return `<div class="tramite-list-item" data-index="${index}"><div><h3>${tramiteNombre}</h3><span class="tiny muted">${pasoActual}</span></div><span class="badge">${status}</span></div>`;
+
+        // HTML Modificado con botón de borrar
+        return `
+        <div class="tramite-list-item" data-index="${index}">
+            <div class="tramite-load-area" data-index="${index}" style="flex-grow: 1; cursor: pointer;">
+                <h3>${tramiteNombre}</h3>
+                <span class="tiny muted">${pasoActual}</span>
+            </div>
+            <div class="row" style="flex-shrink: 0; gap: 10px; align-items: center;">
+                <span class="badge">${status}</span>
+                <button class="btn-delete-tramite destructive tiny" data-index="${index}" title="Borrar trámite" style="padding: 5px 10px; margin: 0;">Borrar</button>
+            </div>
+        </div>`;
     }).join("");
-    $$(".tramite-list-item").forEach(item => { item.onclick = () => { loadTramite(parseInt(item.dataset.index, 10)); }; });
+
+    // Listener para CARGAR
+    $$(".tramite-load-area").forEach(item => {
+        item.onclick = () => {
+            loadTramite(parseInt(item.dataset.index, 10));
+        };
+    });
+
+    // NUEVO Listener para BORRAR
+    $$(".btn-delete-tramite").forEach(button => {
+        button.onclick = (e) => {
+            e.stopPropagation(); // Prevenir que se cargue el trámite
+            handleDeleteTramite(parseInt(e.target.dataset.index, 10));
+        };
+    });
 }
+
+function handleDeleteTramite(index) {
+    if (index < 0 || index >= allTragmites.length) return; // Comprobación de seguridad
+
+    const tramiteNombre = allTragmites[index].tramite ? (DOCS[allTragmites[index].tramite]?.title || "Trámite") : "Este trámite";
+
+    // Confirmación
+    if (confirm(`¿Estás seguro de que quieres borrar "${tramiteNombre}"? Esta acción no se puede deshacer.`)) {
+
+        // 1. Borrar del array
+        allTragmites.splice(index, 1);
+
+        // 2. Guardar en localStorage
+        store.set(STORAGE_KEY, allTragmites);
+
+        // 3. Volver a dibujar la lista
+        renderProfileList();
+
+        // 4. Actualizar el botón "Continuar" de la Home, por si borramos el último
+        $("#btnContinueProcess").style.display = (allTragmites.length > 0) ? "block" : "none";
+    }
+} 
+    
 function loadTramite(index) {
     if (index >= 0 && index < allTragmites.length) {
         currentTragmitesIndex = index;
@@ -2384,6 +2437,7 @@ initApp(); // Ejecutar al cargar la página
 
 </body>
 </html>
+
 
 
 
